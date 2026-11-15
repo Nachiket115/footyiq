@@ -7,6 +7,8 @@ var view_pitch := 0.0
 
 var _look_yaw := 0.0
 var _look_pitch := 0.0
+var _commanded_yaw := 0.0
+var _sim_adjust := 0.0
 var _yaw_limit: float
 var _pitch_limit: float
 var _smoothing: float
@@ -20,11 +22,12 @@ func _init(t: Dictionary) -> void:
 	_tap_power = t.kick.tap_power
 
 
-func update_look(look_delta: Vector2, dt: float) -> void:
+func update_look(look_delta: Vector2, dt: float, tick_fraction := 1.0) -> void:
 	_look_yaw += look_delta.x
 	_look_pitch = clampf(_look_pitch + look_delta.y, -_pitch_limit, _pitch_limit)
+	var target := clampf(_look_yaw - _sim_adjust * (1.0 - tick_fraction), -_yaw_limit, _yaw_limit)
 	var blend := 1.0 if _smoothing <= 0.0 else 1.0 - exp(-dt / _smoothing)
-	view_yaw = lerpf(view_yaw, clampf(_look_yaw, -_yaw_limit, _yaw_limit), blend)
+	view_yaw = lerpf(view_yaw, target, blend)
 	view_pitch = lerpf(view_pitch, _look_pitch, blend)
 
 
@@ -34,11 +37,17 @@ func build_command(tick: int, player_id: int, input: Dictionary) -> PlayerComman
 	cmd.player_id = player_id
 	cmd.move = input.move
 	cmd.sprint = input.sprint
+	cmd.align = input.align
 	cmd.look_yaw = _look_yaw
 	cmd.look_pitch = _look_pitch
 	cmd.lofted = input.lofted
 	if input.shoot:
 		cmd.action = PlayerCommand.Action.SHOOT
 		cmd.power = _tap_power
-	_look_yaw = clampf(_look_yaw, -_yaw_limit, _yaw_limit)
+	_commanded_yaw = _look_yaw
 	return cmd
+
+
+func sync(head_yaw: float) -> void:
+	_sim_adjust = head_yaw - _commanded_yaw
+	_look_yaw = head_yaw

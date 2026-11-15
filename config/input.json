@@ -1,17 +1,62 @@
 {
-	"move_forward": ["key:W", "joy_axis:1:-1"],
-	"move_back": ["key:S", "joy_axis:1:1"],
-	"move_left": ["key:A", "joy_axis:0:-1"],
-	"move_right": ["key:D", "joy_axis:0:1"],
-	"look_left": ["joy_axis:2:-1"],
-	"look_right": ["joy_axis:2:1"],
-	"look_up": ["joy_axis:3:-1"],
-	"look_down": ["joy_axis:3:1"],
-	"sprint": ["key:Shift", "joy_button:7"],
-	"pass": ["mouse:left", "joy_button:0"],
-	"shoot": ["mouse:right", "key:F", "joy_button:2"],
-	"lofted": ["key:Space", "joy_button:9"],
-	"trap": ["key:E", "joy_button:10"],
-	"release_mouse": ["key:Escape"],
-	"debug_camera": ["key:V"]
+	"move_forward": [
+		"key:W",
+		"joy_axis:1:-1"
+	],
+	"move_back": [
+		"key:S",
+		"joy_axis:1:1"
+	],
+	"move_left": [
+		"key:A",
+		"joy_axis:0:-1"
+	],
+	"move_right": [
+		"key:D",
+		"joy_axis:0:1"
+	],
+	"look_left": [
+		"joy_axis:2:-1"
+	],
+	"look_right": [
+		"joy_axis:2:1"
+	],
+	"look_up": [
+		"joy_axis:3:-1"
+	],
+	"look_down": [
+		"joy_axis:3:1"
+	],
+	"sprint": [
+		"key:Shift",
+		"joy_button:7"
+	],
+	"pass": [
+		"mouse:left",
+		"joy_button:0"
+	],
+	"shoot": [
+		"mouse:right",
+		"key:F",
+		"joy_button:2"
+	],
+	"lofted": [
+		"key:Space",
+		"joy_button:9"
+	],
+	"trap": [
+		"key:E",
+		"joy_button:10"
+	],
+	"release_mouse": [
+		"key:Escape"
+	],
+	"debug_camera": [
+		"key:V"
+	],
+	"align": [
+		"key:Q",
+		"mouse:middle",
+		"joy_button:8"
+	]
 }

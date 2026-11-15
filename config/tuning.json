@@ -229,5 +229,18 @@
 		"look_sensitivity_deg": 0.12,
 		"stick_speed_deg": 180.0,
 		"look_smoothing_s": 0.0
+	},
+	"hud": {
+		"body_indicator": {
+			"enabled": true,
+			"track_width_frac": 0.3,
+			"bottom_margin": 48.0,
+			"marker_size": 14.0,
+			"line_width": 3.0,
+			"color": "#ffffff",
+			"max_alpha": 0.85,
+			"fade_start_deg": 4.0,
+			"fade_full_deg": 15.0
+		}
 	}
 }

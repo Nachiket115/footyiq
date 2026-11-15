@@ -1,6 +1,6 @@
 extends Node
 
-const MOUSE_BUTTONS := {"left": MOUSE_BUTTON_LEFT, "right": MOUSE_BUTTON_RIGHT}
+const MOUSE_BUTTONS := {"left": MOUSE_BUTTON_LEFT, "right": MOUSE_BUTTON_RIGHT, "middle": MOUSE_BUTTON_MIDDLE}
 const DEADZONE := 0.2
 
 var _mouse_delta := Vector2.ZERO
@@ -48,6 +48,7 @@ func poll() -> Dictionary:
 	return {
 		"move": Vector2(Input.get_axis("move_left", "move_right"), Input.get_axis("move_back", "move_forward")),
 		"sprint": Input.is_action_pressed("sprint"),
+		"align": Input.is_action_pressed("align"),
 		"shoot": Input.is_action_just_pressed("shoot"),
 		"lofted": Input.is_action_pressed("lofted"),
 		"pass_held": Input.is_action_pressed("pass"),

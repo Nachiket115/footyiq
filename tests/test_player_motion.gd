@@ -101,6 +101,30 @@ func test_look_past_limit_drags_body() -> void:
 	check_near(player.head_yaw, yaw_limit, 1e-6, "head stays at the limit")
 
 
+func test_align_turns_body_to_gaze_and_keeps_world_gaze() -> void:
+	var player := WorldState.PlayerState.new()
+	var look := 1.0
+	var steady := true
+	for i in 60:
+		var cmd := _cmd(Vector2(1, 1), false, look)
+		cmd.align = true
+		PlayerMotion.apply(player, cmd, DT, p)
+		look = player.head_yaw
+		if absf(player.body_yaw + player.head_yaw - 1.0) > 1e-5:
+			steady = false
+	check(steady, "world gaze never moved")
+	check_near(player.body_yaw, 1.0, 1e-5, "body now faces where the head was looking")
+	check_near(player.head_yaw, 0.0, 1e-5, "head is centred on the body")
+
+
+func test_align_first_tick_turns_at_the_turn_rate() -> void:
+	var player := WorldState.PlayerState.new()
+	var cmd := _cmd(Vector2.ZERO, false, -1.0)
+	cmd.align = true
+	PlayerMotion.apply(player, cmd, DT, p)
+	check_near(player.body_yaw, -deg_to_rad(p.turn_rate_jog_deg) * DT, 1e-6, "one tick of turning")
+
+
 func test_head_clamped_to_limits() -> void:
 	var player := WorldState.PlayerState.new()
 	PlayerMotion.apply(player, _cmd(Vector2.ZERO, false, -9.0, 9.0), DT, p)

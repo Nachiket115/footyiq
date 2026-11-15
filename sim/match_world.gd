@@ -12,6 +12,7 @@ const StadiumView = preload("res://sim/stadium_view.gd")
 const BallView = preload("res://sim/ball.gd")
 const PlayerBody = preload("res://sim/player_body.gd")
 const Meshes = preload("res://sim/meshes.gd")
+const BodyIndicator = preload("res://ui/body_indicator.gd")
 
 const TEMP_PLAYER_START := Vector2(-0.6, 0.0)
 
@@ -23,6 +24,7 @@ var _mapper: InputMapper
 var _controller: HumanController
 var _rig: CameraRig
 var _spectator := Camera3D.new()
+var _body_indicator: BodyIndicator
 var _ball_view: BallView
 var _player_views := {}
 var _prev_ball: Vector3
@@ -66,6 +68,10 @@ func _ready() -> void:
 	add_child(_rig)
 	add_child(_spectator)
 	_spectator.look_at_from_position(Meshes.vec3(t.debug.spectator_pos), Meshes.vec3(t.debug.spectator_target))
+	var hud := CanvasLayer.new()
+	add_child(hud)
+	_body_indicator = BodyIndicator.new(t.hud.body_indicator, deg_to_rad(t.player.head_yaw_limit_deg))
+	hud.add_child(_body_indicator)
 	_set_first_person(true)
 	_remember()
 
@@ -74,6 +80,7 @@ func _physics_process(_delta: float) -> void:
 	_remember()
 	var command := _controller.build_command(state.tick + 1, controlled_id, _mapper.poll())
 	Sim.step(state, [command], cfg)
+	_controller.sync(state.player_by_id(controlled_id).head_yaw)
 	if not state.events.is_empty():
 		_prev_ball = state.ball.pos
 
@@ -84,8 +91,9 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _process(delta: float) -> void:
-	_controller.update_look(_mapper.take_look(delta), delta)
 	var f := Engine.get_physics_interpolation_fraction()
+	_controller.update_look(_mapper.take_look(delta), delta, f)
+	_body_indicator.head_yaw = _controller.view_yaw
 	_ball_view.position = _prev_ball.lerp(state.ball.pos, f)
 	for p in state.players:
 		var prev: Array = _prev_players[p.id]
@@ -110,3 +118,4 @@ func _set_first_person(first_person: bool) -> void:
 	_rig.set_active(first_person)
 	_spectator.current = not first_person
 	_player_views[controlled_id].visible = not first_person
+	_body_indicator.visible = first_person and cfg["tuning"].hud.body_indicator.enabled

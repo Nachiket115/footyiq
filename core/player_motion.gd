@@ -16,10 +16,11 @@ static func apply(player: WorldState.PlayerState, cmd: PlayerCommand, dt: float,
 
 	var pace := clampf(inverse_lerp(jog, sprint, player.vel.length()), 0.0, 1.0)
 	var max_turn := deg_to_rad(lerpf(p.turn_rate_jog_deg, p.turn_rate_sprint_deg, pace)) * dt
-	var steer := 0.0 if strafing or move.y < 0.0 else move.x * max_turn
-	var drag := clampf(cmd.look_yaw - clampf(cmd.look_yaw, -yaw_limit, yaw_limit), -max_turn, max_turn)
-	player.body_yaw = wrapf(player.body_yaw + clampf(steer + drag, -max_turn, max_turn), -PI, PI)
-	player.head_yaw = clampf(cmd.look_yaw - drag, -yaw_limit, yaw_limit)
+	var steer := 0.0 if strafing or cmd.align or move.y < 0.0 else move.x * max_turn
+	var follow := cmd.look_yaw if cmd.align else cmd.look_yaw - clampf(cmd.look_yaw, -yaw_limit, yaw_limit)
+	var look_turn := clampf(follow, -max_turn, max_turn)
+	player.body_yaw = wrapf(player.body_yaw + clampf(steer + look_turn, -max_turn, max_turn), -PI, PI)
+	player.head_yaw = clampf(cmd.look_yaw - look_turn, -yaw_limit, yaw_limit)
 	player.head_pitch = clampf(cmd.look_pitch, -pitch_limit, pitch_limit)
 
 	player.sprinting = cmd.sprint and move.y > 0.0
