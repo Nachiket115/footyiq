@@ -1,0 +1,4 @@
+{
+	"shoot": ["mouse:right", "key:F"],
+	"lofted": ["key:Space"]
+}

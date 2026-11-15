@@ -3,6 +3,12 @@
 		"tick_rate": 60,
 		"gravity": 9.81
 	},
+	"pitch": {
+		"length": 40.0,
+		"width": 25.0,
+		"goal_width": 3.0,
+		"boards": false
+	},
 	"ball": {
 		"radius": 0.11,
 		"mass": 0.43,
@@ -22,7 +28,8 @@
 	},
 	"player": {
 		"radius": 0.3,
-		"height": 1.75
+		"height": 1.75,
+		"eye_height": 1.65
 	},
 	"control": {
 		"radius": 0.9
@@ -30,5 +37,28 @@
 	"kick": {
 		"shot_speed": 25.0,
 		"loft_angle_deg": 20.0
+	},
+	"visual": {
+		"pitch_color": "#3a8f3a",
+		"pitch_margin": 6.0,
+		"line_color": "#f2f2f2",
+		"line_width": 0.1,
+		"line_height": 0.01,
+		"centre_circle_radius": 3.0,
+		"goal_color": "#ffffff",
+		"ball_color": "#fff34d",
+		"team_colors": ["#2f6fde", "#d93a3a"],
+		"stripe_color": "#ffffff",
+		"stripe_size": [0.3, 0.5, 0.08],
+		"stripe_height": 1.1,
+		"visor_color": "#111111",
+		"visor_size": [0.4, 0.1, 0.2],
+		"sky_color": "#9fc9ee",
+		"ambient_energy": 0.6,
+		"sun_angles_deg": [-55.0, 30.0]
+	},
+	"debug": {
+		"spectator_pos": [-9.0, 5.0, 11.0],
+		"spectator_target": [3.0, 0.0, 0.0]
 	}
 }
