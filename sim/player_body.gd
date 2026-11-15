@@ -1,40 +1,34 @@
 extends Node3D
 
 const WorldState = preload("res://core/world_state.gd")
+const Meshes = preload("res://sim/meshes.gd")
 
 var head := Node3D.new()
 
 
 func _init(player: WorldState.PlayerState, t: Dictionary) -> void:
 	var v: Dictionary = t.visual
-	var p: Dictionary = t.player
-	var capsule := CapsuleMesh.new()
-	capsule.radius = p.radius
-	capsule.height = p.height
-	_add(self, capsule, v.team_colors[player.team], Vector3(0.0, p.height * 0.5, 0.0))
-	_add(self, _box(v.stripe_size), v.stripe_color, Vector3(0.0, v.stripe_height, -p.radius))
-	head.position.y = p.eye_height
+	var b: Dictionary = v.body
+	var shirt := Meshes.flat(v.team_colors[player.team])
+	var shorts := Meshes.flat(b.shorts_color)
+	var skin := Meshes.flat(b.skin_color)
+	var torso := Meshes.vec3(b.torso_size)
+	var arm := Meshes.vec3(b.arm_size)
+
+	Meshes.add(self, Meshes.box(torso), shirt, Vector3(0.0, b.torso_height, 0.0))
+	Meshes.add(self, Meshes.box(Meshes.vec3(b.shorts_size)), shorts, Vector3(0.0, b.shorts_height, 0.0))
+	Meshes.add(self, Meshes.box(Meshes.vec3(v.stripe_size)), Meshes.flat(v.stripe_color), Vector3(0.0, b.torso_height, -torso.z * 0.5))
+	for side in [-1.0, 1.0]:
+		Meshes.add(self, Meshes.cylinder(b.leg_radius, b.leg_length), skin, Vector3(side * b.leg_spacing, b.leg_length * 0.5, 0.0))
+		Meshes.add(self, Meshes.box(arm), shirt, Vector3(side * (torso.x + arm.x) * 0.5, b.torso_height + (torso.y - arm.y) * 0.5, 0.0))
+
+	head.position.y = t.player.eye_height
 	add_child(head)
-	_add(head, _box(v.visor_size), v.visor_color, Vector3(0.0, 0.0, -p.radius))
+	Meshes.add(head, Meshes.sphere(b.head_radius), skin, Vector3.ZERO)
+	Meshes.add(head, Meshes.box(Meshes.vec3(v.visor_size)), Meshes.flat(v.visor_color, 0.2), Vector3(0.0, 0.0, -b.head_radius))
 
 
 func sync(player: WorldState.PlayerState) -> void:
 	position = Vector3(player.pos.x, 0.0, player.pos.y)
 	rotation.y = -player.body_yaw - PI * 0.5
 	head.rotation = Vector3(player.head_pitch, -player.head_yaw, 0.0)
-
-
-func _add(parent: Node3D, mesh: Mesh, color: String, pos: Vector3) -> void:
-	var material := StandardMaterial3D.new()
-	material.albedo_color = Color(color)
-	var instance := MeshInstance3D.new()
-	instance.mesh = mesh
-	instance.material_override = material
-	instance.position = pos
-	parent.add_child(instance)
-
-
-func _box(size: Array) -> BoxMesh:
-	var box := BoxMesh.new()
-	box.size = Vector3(size[0], size[1], size[2])
-	return box

@@ -1,11 +1,8 @@
 extends MeshInstance3D
 
+const Meshes = preload("res://sim/meshes.gd")
+
 
 func _init(t: Dictionary) -> void:
-	var sphere := SphereMesh.new()
-	sphere.radius = t.ball.radius
-	sphere.height = t.ball.radius * 2.0
-	mesh = sphere
-	var material := StandardMaterial3D.new()
-	material.albedo_color = Color(t.visual.ball_color as String)
-	material_override = material
+	mesh = Meshes.sphere(t.ball.radius)
+	material_override = Meshes.flat(t.visual.ball_color, 0.35)

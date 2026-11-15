@@ -6,7 +6,8 @@ const PlayerCommand = preload("res://core/player_command.gd")
 const Sim = preload("res://core/sim.gd")
 const InputMapper = preload("res://sim/input_mapper.gd")
 const PitchView = preload("res://sim/pitch_view.gd")
-const BallView = preload("res://sim/ball.gd")
+const StadiumView = preload("res://sim/stadium_view.gd")
+const BallView =preload("res://sim/ball.gd")
 const PlayerBody = preload("res://sim/player_body.gd")
 
 const TEMP_KICK_POWER := 0.5
@@ -38,6 +39,7 @@ func _ready() -> void:
 	state.players.append(player)
 
 	add_child(PitchView.new(state.pitch, t))
+	add_child(StadiumView.new(state.pitch, t))
 	ball_view = BallView.new(t)
 	add_child(ball_view)
 	for p in state.players:
