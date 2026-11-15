@@ -39,6 +39,13 @@ var pitch := {}
 var events: Array[Dictionary] = []
 
 
+func player_by_id(id: int) -> PlayerState:
+	for player in players:
+		if player.id == id:
+			return player
+	return null
+
+
 func to_dict() -> Dictionary:
 	return _pack(self)
 

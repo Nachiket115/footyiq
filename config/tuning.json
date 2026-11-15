@@ -1,5 +1,34 @@
 {
 	"sim": {
-		"tick_rate": 60
+		"tick_rate": 60,
+		"gravity": 9.81
+	},
+	"ball": {
+		"radius": 0.11,
+		"mass": 0.43,
+		"restitution": 0.7,
+		"bounce_min_speed": 0.5,
+		"rolling_friction": 0.15,
+		"air_drag": 0.0057,
+		"post_restitution": 0.6,
+		"player_restitution": 0.3,
+		"board_restitution": 0.7,
+		"min_substeps": 4,
+		"substep_travel_factor": 0.5
+	},
+	"goal": {
+		"post_radius": 0.05,
+		"height": 2.0
+	},
+	"player": {
+		"radius": 0.3,
+		"height": 1.75
+	},
+	"control": {
+		"radius": 0.9
+	},
+	"kick": {
+		"shot_speed": 25.0,
+		"loft_angle_deg": 20.0
 	}
 }
