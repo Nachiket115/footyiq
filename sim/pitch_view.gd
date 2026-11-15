@@ -16,9 +16,13 @@ func _init(pitch: Dictionary, t: Dictionary) -> void:
 	var ground := PlaneMesh.new()
 	ground.size = Vector2(length + v.pitch_margin * 2.0, width + v.pitch_margin * 2.0)
 	var grass := Meshes.shader(GRASS_SHADER, {
-		"color_a": Color(v.pitch_color as String),
-		"color_b": Color(v.pitch_color_alt as String),
+		"albedo_tex": load(v.grass_maps.color),
+		"normal_tex": load(v.grass_maps.normal),
+		"roughness_tex": load(v.grass_maps.roughness),
+		"tint": Color(v.grass_tint as String),
+		"tile_size": v.grass_tile_size,
 		"stripe_width": v.mow_stripe_width,
+		"stripe_contrast": v.mow_stripe_contrast,
 	})
 	Meshes.add(self, ground, grass, Vector3.ZERO)
 
@@ -65,22 +69,32 @@ func _add_net(size: Vector2, material: Material, pos: Vector3, v: Dictionary) ->
 
 
 func _add_lighting(v: Dictionary) -> void:
+	var panorama := PanoramaSkyMaterial.new()
+	panorama.panorama = load(v.sky_path)
 	var sky := Sky.new()
-	sky.sky_material = ProceduralSkyMaterial.new()
+	sky.sky_material = panorama
 	var env := Environment.new()
 	env.background_mode = Environment.BG_SKY
 	env.sky = sky
+	env.background_energy_multiplier = v.sky_energy
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
 	env.ambient_light_energy = v.ambient_energy
-	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+	env.tonemap_mode = Environment.TONE_MAPPER_ACES
+	env.tonemap_white = v.tonemap_white
 	env.ssao_enabled = true
+	env.glow_enabled = true
+	env.glow_intensity = v.glow_intensity
+	env.fog_enabled = true
+	env.fog_density = v.fog_density
+	env.fog_aerial_perspective = 1.0
 	var world_env := WorldEnvironment.new()
 	world_env.environment = env
 	add_child(world_env)
 
 	var sun := DirectionalLight3D.new()
-	sun.rotation_degrees = Vector3(v.sun_angles_deg[0], v.sun_angles_deg[1], 0.0)
+	add_child(sun)
+	sun.look_at_from_position(Meshes.vec3(v.sun_direction), Vector3.ZERO)
+	sun.light_color = Color(v.sun_color as String)
 	sun.light_energy = v.sun_energy
 	sun.shadow_enabled = true
 	sun.directional_shadow_max_distance = v.shadow_distance
-	add_child(sun)
