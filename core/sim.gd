@@ -2,6 +2,7 @@ extends RefCounted
 
 const WorldState = preload("res://core/world_state.gd")
 const PlayerCommand = preload("res://core/player_command.gd")
+const PlayerMotion = preload("res://core/player_motion.gd")
 const BallPhysics = preload("res://core/ball_physics.gd")
 const BallControl = preload("res://core/ball_control.gd")
 
@@ -18,6 +19,18 @@ static func step(state: WorldState, commands: Array, cfg: Dictionary) -> WorldSt
 	state.tick += 1
 	state.events.clear()
 
+	var by_player := {}
+	for cmd: PlayerCommand in commands:
+		by_player[cmd.player_id] = cmd
+	var margin: float = t.player.out_margin
+	var limit := Vector2(state.pitch.length * 0.5 + margin, state.pitch.width * 0.5 + margin)
+	for player in state.players:
+		var cmd: PlayerCommand = by_player.get(player.id)
+		PlayerMotion.apply(player, cmd if cmd != null else _idle(player), dt, t.player)
+	PlayerMotion.separate(state.players, t.player.radius)
+	for player in state.players:
+		player.pos = player.pos.clamp(-limit, limit)
+
 	for cmd: PlayerCommand in commands:
 		if cmd.action == PlayerCommand.Action.SHOOT:
 			BallControl.kick(state, cmd, t)
@@ -31,6 +44,14 @@ static func step(state: WorldState, commands: Array, cfg: Dictionary) -> WorldSt
 		else:
 			_place_ball(state.ball, event.pos)
 	return state
+
+
+static func _idle(player: WorldState.PlayerState) -> PlayerCommand:
+	var cmd := PlayerCommand.new()
+	cmd.player_id = player.id
+	cmd.look_yaw = player.head_yaw
+	cmd.look_pitch = player.head_pitch
+	return cmd
 
 
 static func _place_ball(ball: WorldState.BallState, pos: Vector3) -> void:

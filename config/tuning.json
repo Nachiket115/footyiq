@@ -29,14 +29,27 @@
 	"player": {
 		"radius": 0.3,
 		"height": 1.75,
-		"eye_height": 1.65
+		"eye_height": 1.65,
+		"jog_speed": 4.0,
+		"sprint_speed": 7.5,
+		"accel": 10.0,
+		"decel": 14.0,
+		"turn_rate_jog_deg": 240.0,
+		"turn_rate_sprint_deg": 120.0,
+		"backpedal_factor": 0.5,
+		"lateral_mode": "steer",
+		"strafe_factor": 0.6,
+		"head_yaw_limit_deg": 110.0,
+		"head_pitch_limit_deg": 70.0,
+		"out_margin": 3.0
 	},
 	"control": {
 		"radius": 0.9
 	},
 	"kick": {
 		"shot_speed": 25.0,
-		"loft_angle_deg": 20.0
+		"loft_angle_deg": 20.0,
+		"tap_power": 0.5
 	},
 	"visual": {
 		"mow_stripe_width": 2.5,
@@ -207,5 +220,14 @@
 			0.0,
 			0.0
 		]
+	},
+	"camera": {
+		"fov_deg": 100.0,
+		"fov_min": 80.0,
+		"fov_max": 120.0,
+		"near": 0.05,
+		"look_sensitivity_deg": 0.12,
+		"stick_speed_deg": 180.0,
+		"look_smoothing_s": 0.0
 	}
 }

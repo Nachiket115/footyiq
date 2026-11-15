@@ -30,6 +30,8 @@ func _commands(tick: int) -> Array:
 	var cmd := PlayerCommand.new()
 	cmd.tick = tick
 	cmd.player_id = 0
+	cmd.look_yaw = 0.35
+	cmd.move = Vector2(0.3, 1.0)
 	cmd.action = PlayerCommand.Action.SHOOT
 	cmd.power = 0.9
 	cmd.lofted = tick > 1

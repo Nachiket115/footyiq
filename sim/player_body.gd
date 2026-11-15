@@ -28,7 +28,7 @@ func _init(player: WorldState.PlayerState, t: Dictionary) -> void:
 	Meshes.add(head, Meshes.box(Meshes.vec3(v.visor_size)), Meshes.flat(v.visor_color, 0.2), Vector3(0.0, 0.0, -b.head_radius))
 
 
-func sync(player: WorldState.PlayerState) -> void:
-	position = Vector3(player.pos.x, 0.0, player.pos.y)
-	rotation.y = -player.body_yaw - PI * 0.5
-	head.rotation = Vector3(player.head_pitch, -player.head_yaw, 0.0)
+func sync(pos: Vector2, body_yaw: float, head_yaw: float, head_pitch: float) -> void:
+	position = Vector3(pos.x, 0.0, pos.y)
+	rotation.y = -body_yaw - PI * 0.5
+	head.rotation = Vector3(head_pitch, -head_yaw, 0.0)
