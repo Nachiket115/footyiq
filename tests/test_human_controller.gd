@@ -7,7 +7,7 @@ const HumanController = preload("res://sim/human_controller.gd")
 var t: Dictionary = Config.load_all("res://config")["tuning"]
 var yaw_limit := deg_to_rad(t.player.head_yaw_limit_deg)
 
-const IDLE := {"move": Vector2.ZERO, "sprint": false, "align": false, "shoot": false, "lofted": false}
+const IDLE := {"move": Vector2.ZERO, "sprint": false, "align": false, "shoot": false, "lofted": false, "pass_held": false, "pass_released": false, "trap": false}
 
 
 func test_look_accumulates_and_pitch_clamps() -> void:
@@ -56,3 +56,25 @@ func test_shoot_input_becomes_shoot_action() -> void:
 	check_eq(cmd.action, PlayerCommand.Action.SHOOT, "action")
 	check(cmd.lofted and cmd.sprint, "modifiers")
 	check_eq(cmd.move, Vector2(0, 1), "move")
+
+
+func test_held_pass_charges_and_release_sends_it() -> void:
+	var controller := HumanController.new(t)
+	var held := IDLE.merged({"pass_held": true}, true)
+	var ticks := int(t.kick.charge_time * t.sim.tick_rate / 2.0)
+	for i in ticks:
+		check_eq(controller.build_command(i, 0, held).action, PlayerCommand.Action.NONE, "no action while held")
+	check_near(controller.charge, 0.5, 0.02, "half charge")
+	var cmd: PlayerCommand = controller.build_command(ticks, 0, IDLE.merged({"pass_released": true}, true))
+	check_eq(cmd.action, PlayerCommand.Action.PASS, "pass on release")
+	check_near(cmd.power, 0.5, 0.02, "power")
+	check_eq(controller.charge, 0.0, "charge reset")
+	for i in 200:
+		controller.build_command(i, 0, held)
+	check_eq(controller.charge, 1.0, "charge caps at 1")
+
+
+func test_trap_input_becomes_trap_action() -> void:
+	var controller := HumanController.new(t)
+	var cmd: PlayerCommand = controller.build_command(1, 0, IDLE.merged({"trap": true}, true))
+	check_eq(cmd.action, PlayerCommand.Action.TRAP, "action")

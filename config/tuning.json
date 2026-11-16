@@ -44,12 +44,26 @@
 		"out_margin": 3.0
 	},
 	"control": {
-		"radius": 0.9
+		"radius": 0.9,
+		"max_height": 0.6,
+		"max_ball_speed": 12.0,
+		"trap_speed_factor": 1.5
+	},
+	"dribble": {
+		"lead_distance": 0.6,
+		"slack": 0.15,
+		"touch_speed_factor": 1.2
 	},
 	"kick": {
+		"pass_speed_min": 8.0,
+		"pass_speed_max": 22.0,
 		"shot_speed": 25.0,
 		"loft_angle_deg": 20.0,
-		"tap_power": 0.5
+		"charge_time": 0.8
+	},
+	"tackle": {
+		"radius": 0.9,
+		"chance_per_s": 2.0
 	},
 	"visual": {
 		"mow_stripe_width": 2.5,

@@ -12,14 +12,16 @@ var _sim_adjust := 0.0
 var _yaw_limit: float
 var _pitch_limit: float
 var _smoothing: float
-var _tap_power: float
+var _charge_per_tick: float
+
+var charge := 0.0
 
 
 func _init(t: Dictionary) -> void:
 	_yaw_limit = deg_to_rad(t.player.head_yaw_limit_deg)
 	_pitch_limit = deg_to_rad(t.player.head_pitch_limit_deg)
 	_smoothing = t.camera.look_smoothing_s
-	_tap_power = t.kick.tap_power
+	_charge_per_tick = 1.0 / (t.kick.charge_time * t.sim.tick_rate)
 
 
 func update_look(look_delta: Vector2, dt: float, tick_fraction := 1.0) -> void:
@@ -43,7 +45,13 @@ func build_command(tick: int, player_id: int, input: Dictionary) -> PlayerComman
 	cmd.lofted = input.lofted
 	if input.shoot:
 		cmd.action = PlayerCommand.Action.SHOOT
-		cmd.power = _tap_power
+		cmd.power = 1.0
+	elif input.pass_released:
+		cmd.action = PlayerCommand.Action.PASS
+		cmd.power = charge
+	elif input.trap:
+		cmd.action = PlayerCommand.Action.TRAP
+	charge = minf(charge + _charge_per_tick, 1.0) if input.pass_held else 0.0
 	_commanded_yaw = _look_yaw
 	return cmd
 

@@ -31,9 +31,10 @@ static func step(state: WorldState, commands: Array, cfg: Dictionary) -> WorldSt
 	for player in state.players:
 		player.pos = player.pos.clamp(-limit, limit)
 
-	for cmd: PlayerCommand in commands:
-		if cmd.action == PlayerCommand.Action.SHOOT:
-			BallControl.kick(state, cmd, t)
+	var rng := RandomNumberGenerator.new()
+	rng.state = int(state.rng_state)
+	BallControl.update(state, by_player, dt, t, rng)
+	state.rng_state = str(rng.state)
 
 	for event in BallPhysics.integrate(state.ball, state.players, dt, state.pitch, t):
 		event["tick"] = state.tick
@@ -59,3 +60,5 @@ static func _place_ball(ball: WorldState.BallState, pos: Vector3) -> void:
 	ball.vel = Vector3.ZERO
 	ball.spin = Vector3.ZERO
 	ball.owner_id = -1
+	ball.pass_from_id = -1
+	ball.pass_target_id = -1
