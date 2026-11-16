@@ -4,20 +4,26 @@
 		"perception_noise": 1.5,
 		"speed_factor": 0.85,
 		"press_radius": 3.0,
-		"lane_cover": 0.3
+		"lane_cover": 0.3,
+		"decision_scale": 0.25,
+		"decision_s": 4.0
 	},
 	"medium": {
 		"reaction_time": 0.25,
 		"perception_noise": 0.8,
 		"speed_factor": 0.95,
 		"press_radius": 5.0,
-		"lane_cover": 0.6
+		"lane_cover": 0.6,
+		"decision_scale": 0.4,
+		"decision_s": 2.5
 	},
 	"hard": {
 		"reaction_time": 0.12,
 		"perception_noise": 0.3,
 		"speed_factor": 1.0,
 		"press_radius": 7.0,
-		"lane_cover": 0.9
+		"lane_cover": 0.9,
+		"decision_scale": 0.7,
+		"decision_s": 1.5
 	}
 }

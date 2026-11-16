@@ -12,6 +12,10 @@ var goal := ""
 var bars: Array = []
 var misses: Array = []
 var markers := []
+var options: Array = []
+var decision_left := 0.0
+var verdict := ""
+var verdict_good := false
 
 var _s: Dictionary
 var _teams: Array
@@ -42,6 +46,15 @@ func _draw() -> void:
 		draw_rect(Rect2(bar.position, Vector2(bar.size.x * charge, bar.size.y)), _c("you_color"))
 	if banner != "":
 		_result()
+	elif not options.is_empty():
+		_options()
+	elif verdict != "":
+		var px := int(_s.title_size * _k)
+		var wide := _width(verdict, px) + 40.0 * _k
+		var box := Rect2((size.x - wide) * 0.5, size.y * 0.72, wide, px * 1.9)
+		draw_rect(box, _c("panel_color"))
+		draw_rect(Rect2(box.position, Vector2(4.0 * _k, box.size.y)), _c("won_color") if verdict_good else _c("you_color"))
+		_text(box.position + Vector2(22.0 * _k, px * 1.3), verdict, px, _c("text_color"))
 	var m: float = _s.marker_size * _k
 	for marker: Array in markers:
 		var tip: Vector2 = marker[0]
@@ -119,6 +132,23 @@ func _result() -> void:
 	for miss: String in misses:
 		_text(Vector2(left, y + small), miss, small, _c("dim_color"))
 		y += small * 1.6
+
+
+func _options() -> void:
+	var px := int(_s.title_size * _k)
+	var small := int(_s.text_size * _k)
+	var pad := 14.0 * _k
+	var wide := 0.0
+	for option: Array in options:
+		wide = maxf(wide, _width(option[0], px) + _width(option[1], small) + pad * 5.0)
+	var row := px * 1.6
+	var box := Rect2((size.x - wide) * 0.5, size.y * 0.9 - options.size() * row - pad, wide, options.size() * row + pad)
+	draw_rect(box, _c("panel_color"))
+	draw_rect(Rect2(box.position, Vector2(box.size.x * decision_left, 4.0 * _k)), _c("you_color"))
+	for i in options.size():
+		var base := box.position.y + pad * 0.5 + (i + 0.72) * row
+		_text(Vector2(box.position.x + pad, base), options[i][0], px, _c("text_color"))
+		_text(Vector2(box.end.x - pad - _width(options[i][1], small), base), options[i][1], small, _c("dim_color"))
 
 
 func _text(at: Vector2, text: String, px: int, color: Color) -> float:

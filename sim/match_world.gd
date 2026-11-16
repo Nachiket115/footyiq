@@ -6,6 +6,7 @@ const Sim = preload("res://core/sim.gd")
 const BallControl = preload("res://core/ball_control.gd")
 const PitchSnapshot = preload("res://core/pitch_snapshot.gd")
 const Scenario = preload("res://core/scenario.gd")
+const Decision = preload("res://core/decision.gd")
 const Tactic = preload("res://core/tactic.gd")
 const Roles = preload("res://bots/roles.gd")
 const BotController = preload("res://sim/bot_controller.gd")
@@ -24,6 +25,7 @@ const Minimap = preload("res://ui/minimap.gd")
 const Sounds = preload("res://sim/sounds.gd")
 
 const VIEWS := ["chase", "first", "spectator"]
+const HINTS := {"shoot": "Right click", "dribble": "W"}
 
 var cfg: Dictionary
 var state: WorldState
@@ -54,6 +56,13 @@ var _scenario_index := -1
 var _scenario_tick := 0
 var _frames := []
 var _last_scenario := -1
+var _choices: Array = []
+var _decision_from_ms := 0
+var _decision_until_ms := 0
+var _verdict := {}
+var _verdict_until_ms := 0
+var _decisions := [0, 0]
+var _had_ball := false
 
 
 func _ready() -> void:
@@ -145,6 +154,7 @@ func _physics_process(_delta: float) -> void:
 			_sounds.play("kick")
 		elif event.type == "goal" and _scenarios.is_empty():
 			_kickoff()
+	_track_decision()
 	if not _scenarios.is_empty():
 		if state.tick % int(t.headless.frame_ticks) == 0:
 			_frames.append(PitchSnapshot.from_world(state, t.sim.tick_rate))
@@ -230,6 +240,41 @@ func _set_view(view: String) -> void:
 	_body_indicator.visible = view == "first" and cfg["tuning"].hud.body_indicator.enabled
 
 
+func _track_decision() -> void:
+	var t: Dictionary = cfg["tuning"]
+	var mine: bool = state.ball.owner_id == controlled_id
+	if _choices.is_empty():
+		if mine and not _had_ball:
+			var me := state.player_by_id(controlled_id)
+			var found := Decision.options(PitchSnapshot.from_world(state, t.sim.tick_rate), controlled_id, Roles.attacking_dir(me.team), t)
+			if found.size() > 1:
+				var level: Dictionary = cfg["difficulty"][t.debug.teams[1 - me.team].difficulty]
+				_choices = found
+				_decision_from_ms = Time.get_ticks_msec()
+				_decision_until_ms = _decision_from_ms + int(level.decision_s * 1000.0)
+				Engine.time_scale = level.decision_scale
+	else:
+		var kind := ""
+		for event in state.events:
+			if (event.type == "pass" or event.type == "shot") and event.player_id == controlled_id:
+				kind = Decision.kind_of(_choices, event)
+		if kind == "" and mine and Time.get_ticks_msec() >= _decision_until_ms:
+			kind = "dribble"
+		if kind != "" or not mine:
+			_close_decision(kind)
+	_had_ball = mine
+
+
+func _close_decision(kind: String) -> void:
+	Engine.time_scale = 1.0
+	if kind != "" and not _choices.is_empty():
+		_verdict = Decision.verdict(_choices, kind)
+		_verdict_until_ms = Time.get_ticks_msec() + int(cfg["tuning"].decision.verdict_s * 1000.0)
+		_decisions[0] += int(_verdict.good)
+		_decisions[1] += 1
+	_choices = []
+
+
 func _scenario() -> Dictionary:
 	return cfg["scenarios"][_scenarios[_scenario_index]]
 
@@ -251,6 +296,8 @@ func _next_scenario() -> void:
 	_bots.human_id = controlled_id
 	_frames.clear()
 	_scenario_tick = state.tick
+	_decisions = [0, 0]
+	_had_ball = false
 	_hud.bars = []
 	_hud.misses = []
 	_sounds.play("whistle")
@@ -262,7 +309,10 @@ func _finish_scenario(result: String) -> void:
 	var me := state.player_by_id(controlled_id)
 	var score := Tactic.score_role(_frames, _drill.team_roles[me.team][me.role], {"player_id": controlled_id, "tuning": t})
 	_banner = result.to_upper()
+	_close_decision("")
 	_hud.bars = Scenario.bars(score)
+	if _decisions[1] > 0:
+		_hud.bars.append(["Decisions", float(_decisions[0]) / _decisions[1]])
 	_hud.misses = Scenario.misses(score, _scenario_tick / t.sim.tick_rate)
 	_banner_until_ms = Time.get_ticks_msec() + int(t.play.result_s * 1000.0)
 	_paused_until_ms = _banner_until_ms
@@ -304,6 +354,13 @@ func _update_hud(f: float) -> void:
 		marked[_controller.receiver(state, controlled_id, _controller.charge if _controller.charge > 0.0 else 1.0)] = "pass_color"
 	elif t.control_mode != "locked_position":
 		marked[BallControl.switch_target(state, controlled_id)] = "switch_color"
+	var now := Time.get_ticks_msec()
+	_hud.options = _choices.map(func(choice: Dictionary) -> Array: return [choice.label, HINTS.get(choice.kind, "Left click")])
+	_hud.decision_left = clampf(inverse_lerp(_decision_until_ms, _decision_from_ms, now), 0.0, 1.0)
+	_hud.verdict = _verdict.get("text", "") if now < _verdict_until_ms and _choices.is_empty() else ""
+	_hud.verdict_good = _verdict.get("good", false)
+	for choice: Dictionary in _choices:
+		marked[choice.target_id] = "pass_color"
 	_hud.markers.clear()
 	var camera := get_viewport().get_camera_3d()
 	for p in state.players:

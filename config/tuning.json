@@ -353,6 +353,11 @@
 		"wing_depth": 4.0,
 		"wing_inset": 2.0
 	},
+	"decision": {
+		"min_open": 0.3,
+		"forward_m": 4.0,
+		"verdict_s": 3.0
+	},
 	"play": {
 		"drill": "11v11",
 		"scenarios": true,
