@@ -8,6 +8,7 @@ var ball_pos := Vector2.ZERO
 var ball_vel := Vector2.ZERO
 var ball_height := 0.0
 var owner_id := -1
+var last_touch_id := -1
 var pitch := {}
 
 
@@ -20,5 +21,6 @@ static func from_world(state: WorldState, tick_rate: float) -> RefCounted:
 	snap.ball_vel = Vector2(state.ball.vel.x, state.ball.vel.z)
 	snap.ball_height = state.ball.pos.y
 	snap.owner_id = state.ball.owner_id
+	snap.last_touch_id = state.ball.last_touch_id
 	snap.pitch = state.pitch
 	return snap

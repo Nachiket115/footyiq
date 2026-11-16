@@ -5,80 +5,132 @@ const PlayerCommand = preload("res://core/player_command.gd")
 const PitchSnapshot = preload("res://core/pitch_snapshot.gd")
 const Intent = preload("res://core/intent.gd")
 const Steering = preload("res://bots/steering.gd")
-const Roles = preload("res://bots/roles.gd")
+const BotBrain = preload("res://bots/bot_brain.gd")
+
+const Action = PlayerCommand.Action
 
 var human_id := -1
 
 var _t: Dictionary
+var _b: Dictionary
 var _teams: Array
+var _rng: RandomNumberGenerator
+var _history: Array[PitchSnapshot] = []
+var _intents := {}
+var _drift := {}
 var _moving := {}
+var _smooth := {}
 
 
 func _init(cfg: Dictionary, team_params: Array) -> void:
 	_t = cfg["tuning"]
+	_b = _t.bot
 	_teams = team_params
 
 
 func commands(state: WorldState) -> Array:
-	var snap: PitchSnapshot = PitchSnapshot.from_world(state, _t.sim.tick_rate)
-	var chasers := _chasers(snap)
+	if _rng == null:
+		_rng = RandomNumberGenerator.new()
+		_rng.seed = hash(state.rng_state)
+	_history.append(PitchSnapshot.from_world(state, _t.sim.tick_rate))
+	if _history.size() > _delay_ticks() + 1:
+		_history.pop_front()
+	var every := roundi(_b.decide_interval * _t.sim.tick_rate)
 	var result := []
 	for player in state.players:
 		if player.id == human_id:
 			continue
-		var cmd := _intent(snap, snap.players[state.players.find(player)], chasers).to_command(state.tick + 1, player, _t)
-		_watch_ball(cmd, player, state.ball)
-		result.append(cmd)
+		if not _intents.has(player.id) or (state.tick + player.id % int(_b.stagger_ticks)) % every == 0:
+			var params := {"self_id": player.id, "tuning": _t, "difficulty": _b.difficulty, "rng": _rng}
+			_intents[player.id] = BotBrain.decide(perceive(player.id), _teams[player.team].roles[player.role], params)
+		result.append(_command(state, player, _intents[player.id]))
 	return result
 
 
-func _chasers(snap: PitchSnapshot) -> Dictionary:
-	var best := {}
-	var best_dist := {}
-	for me in snap.players:
-		var dist: float = me.pos.distance_to(snap.ball_pos)
-		if me.role != "gk" and dist < best_dist.get(me.team, INF):
-			best_dist[me.team] = dist
-			best[me.team] = me.id
-	return best
+func perceive(id: int) -> PitchSnapshot:
+	var now: PitchSnapshot = _history[-1]
+	var old: PitchSnapshot = _history[maxi(0, _history.size() - 1 - _delay_ticks())]
+	var me: Dictionary
+	for player in now.players:
+		if player.id == id:
+			me = player
+
+	var drift: Array = _drift.get_or_add(id, [])
+	var keep: float = _b.noise_keep
+	for i in old.players.size() + 1:
+		if i == drift.size():
+			drift.append(Vector2.ZERO)
+		drift[i] = drift[i] * keep + Vector2(_rng.randfn(), _rng.randfn()) * sqrt(1.0 - keep * keep)
+
+	var lag := now.time - old.time
+	var seen := PitchSnapshot.new()
+	seen.time = old.time
+	seen.pitch = old.pitch
+	for i in old.players.size():
+		var other: Dictionary = old.players[i]
+		if other.id == id:
+			seen.players.append(me)
+			continue
+		other = other.duplicate()
+		other.pos = _blur(other.pos + other.vel * lag, me.pos, drift[i])
+		seen.players.append(other)
+	var ball := now if id in [old.owner_id, now.owner_id] else old
+	seen.ball_pos = _blur(ball.ball_pos + ball.ball_vel * (now.time - ball.time), me.pos, drift[-1])
+	seen.ball_vel = ball.ball_vel
+	seen.ball_height = ball.ball_height
+	seen.owner_id = ball.owner_id
+	seen.last_touch_id = ball.last_touch_id
+	return seen
 
 
-func _intent(snap: PitchSnapshot, me: Dictionary, chasers: Dictionary) -> Intent:
+func _delay_ticks() -> int:
+	return roundi(_b.difficulty.reaction_time * _t.sim.tick_rate)
+
+
+func _blur(pos: Vector2, from: Vector2, drift: Vector2) -> Vector2:
+	return pos + drift * _b.difficulty.perception_noise * minf(1.0, from.distance_to(pos) / _b.noise_range)
+
+
+func _command(state: WorldState, player: WorldState.PlayerState, intent: Intent) -> PlayerCommand:
 	var s: Dictionary = _t.steering
 	var jog: float = _t.player.jog_speed
-	var dir := Roles.attacking_dir(me.team)
-	var intent := Intent.new()
-	intent.desired_facing = (snap.ball_pos - me.pos).angle()
-	var owner_team := -1
-	for other in snap.players:
-		if other.id == snap.owner_id:
-			owner_team = other.team
-
-	var goal := Vector2(dir * snap.pitch.length * 0.5, 0.0)
-	var target: Vector2 = Roles.anchor(_teams[me.team].roles[me.role], snap.ball_pos, snap.pitch, dir)
-	var speed := jog
-	if snap.owner_id == me.id:
-		target = goal
-		if me.pos.distance_to(goal) < s.shoot_range:
-			intent.action = PlayerCommand.Action.SHOOT
-			intent.power = 1.0
-	elif chasers.get(me.team) == me.id and owner_team != me.team:
-		target = snap.ball_pos
-		speed = _t.player.sprint_speed
-		if owner_team != -1:
-			intent.action = PlayerCommand.Action.TACKLE
-
 	var others := []
-	for other in snap.players:
-		if other.id != me.id:
+	for other in state.players:
+		if other.id != player.id:
 			others.append(other.pos)
-	var go := Steering.arrive(me.pos, target, speed, s.arrive_radius)
-	var apart: Vector2 = Steering.separation(me.pos, others, s.separation_radius) * jog
-	var desired := Steering.blend([go, apart], [1.0, s.separation_weight], speed)
-	_moving[me.id] = desired.length() > (s.stop_speed if _moving.get(me.id, false) else s.start_speed)
-	if _moving[me.id]:
-		intent.desired_velocity = desired
-	return intent
+	var apart: Vector2 = Steering.separation(player.pos, others, s.separation_radius) * jog
+	var blend := minf(1.0, 1.0 / (s.smooth_s * _t.sim.tick_rate))
+	var wanted: Vector2 = _smooth.get(player.id, Vector2.ZERO).lerp(intent.desired_velocity, blend)
+	_smooth[player.id] = wanted
+	var top: float = _t.player.sprint_speed if wanted.length() > jog else jog
+	var desired := Steering.blend([wanted, apart], [1.0, s.separation_weight], top)
+
+	var kicking := intent.action == Action.PASS or intent.action == Action.SHOOT
+	var aim := angle_difference(player.body_yaw, intent.desired_facing)
+	var to_ball := Vector2(state.ball.pos.x, state.ball.pos.z) - player.pos
+	var fire := kicking and state.ball.owner_id == player.id and absf(aim) <= deg_to_rad(_b.kick_cone_deg) \
+		and to_ball.dot(Vector2.from_angle(intent.desired_facing)) > 0.0
+	if kicking and not fire:
+		desired = Vector2.ZERO
+
+	var live := Intent.new()
+	live.desired_facing = intent.desired_facing
+	live.target_id = intent.target_id
+	live.power = intent.power
+	if fire or not kicking:
+		live.action = intent.action
+	_moving[player.id] = desired.length() > (s.stop_speed if _moving.get(player.id, false) else s.start_speed)
+	if _moving[player.id]:
+		live.desired_velocity = desired
+
+	var cmd := live.to_command(state.tick + 1, player, _t)
+	_watch_ball(cmd, player, state.ball)
+	if fire:
+		cmd.look_yaw = aim
+		cmd.look_pitch = 0.0
+		cmd.move.x = 0.0
+		intent.action = Action.NONE
+	return cmd
 
 
 func _watch_ball(cmd: PlayerCommand, player: WorldState.PlayerState, ball: WorldState.BallState) -> void:

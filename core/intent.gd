@@ -20,7 +20,7 @@ func to_command(tick: int, player: WorldState.PlayerState, t: Dictionary) -> Pla
 	var speed := desired_velocity.length()
 	var moving: bool = speed > t.steering.stop_speed
 	var error := angle_difference(player.body_yaw, desired_velocity.angle() if moving else desired_facing)
-	if absf(error) > deg_to_rad(t.steering.turn_deadband_deg):
+	if absf(error) > deg_to_rad(t.steering.turn_deadband_deg if moving else t.steering.stand_turn_deg):
 		cmd.move.x = clampf(error * t.steering.turn_gain, -1.0, 1.0)
 	if moving:
 		cmd.sprint = speed > t.player.jog_speed
