@@ -51,7 +51,7 @@ static func _option(snap: PitchSnapshot, passer_id: int, receiver_id: int, attac
 	var from: Vector2 = passer.pos
 	var to: Vector2 = receiver.pos
 	var openness := lane_openness(from, to, opponents, p)
-	var progression := clampf((to.x - from.x) * attacking_dir / snap.pitch.length, -1.0, 1.0)
+	var progression := clampf((to.x - from.x) * attacking_dir / l.progress_distance, -1.0, 1.0)
 	var risk := clampf(from.distance_to(to) / l.max_pass_distance, 0.0, 1.0)
 	var value: float = w.openness * openness + w.progression * progression \
 		+ w.space * space_score(to, opponents, p) - w.risk * risk

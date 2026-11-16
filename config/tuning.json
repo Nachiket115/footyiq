@@ -124,6 +124,7 @@
 		"noise_range": 15.0,
 		"choice_noise": 0.05,
 		"min_pass_distance": 4.0,
+		"pass_min_open": 0.0,
 		"pass_speed_base": 7.0,
 		"pass_speed_per_m": 0.6,
 		"kick_cone_deg": 60.0,
@@ -134,9 +135,13 @@
 		"dribble_angles_deg": [-60.0, -30.0, 0.0, 30.0, 60.0],
 		"dribble_probe": 4.0,
 		"run_depth": 2.0,
+		"edge_inset": 0.0,
+		"keeper_pass_penalty": 0.0,
 		"dribble_sprint": 0.4,
 		"support_radius": 8.0,
 		"support_points": 8,
+		"show_count": 0,
+		"show_lane": 2.5,
 		"spacing_radius": 8.0,
 		"zone_mark_radius": 6.0,
 		"zone_mark_blend": 1.0,
@@ -171,6 +176,7 @@
 		"margin": 2.0,
 		"space_radius": 6.0,
 		"max_pass_distance": 30.0,
+		"progress_distance": 40.0,
 		"weights": {
 			"openness": 1.0,
 			"progression": 0.6,
@@ -352,6 +358,9 @@
 		"match_s": 120.0,
 		"wing_depth": 4.0,
 		"wing_inset": 2.0
+	},
+	"scenario": {
+		"keep_s": 2.0
 	},
 	"decision": {
 		"min_open": 0.3,

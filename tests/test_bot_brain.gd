@@ -274,3 +274,4 @@ func test_teammate_makes_its_run_when_the_trigger_player_has_the_ball() -> void:
 	var run := _decide(fed, 1).desired_velocity
 	check(run.x > t.player.jog_speed, "the wide player sprints forward when the striker receives: %s" % run)
 	check(run.x > _decide(idle, 1).desired_velocity.x + 1.0, "and not when the centre-back has it")
+

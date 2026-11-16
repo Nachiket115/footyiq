@@ -55,6 +55,7 @@ var _scenarios: Array = []
 var _scenario_index := -1
 var _scenario_tick := 0
 var _frames := []
+var _held := {}
 var _last_scenario := -1
 var _choices: Array = []
 var _decision_from_ms := 0
@@ -158,7 +159,8 @@ func _physics_process(_delta: float) -> void:
 	if not _scenarios.is_empty():
 		if state.tick % int(t.headless.frame_ticks) == 0:
 			_frames.append(PitchSnapshot.from_world(state, t.sim.tick_rate))
-		var result := Scenario.outcome(_scenario(), state, (state.tick - _scenario_tick) / t.sim.tick_rate)
+		Scenario.track(_held, state)
+		var result := Scenario.outcome(_scenario(), state, (state.tick - _scenario_tick) / t.sim.tick_rate, _held, t)
 		if result != "":
 			_finish_scenario(result)
 	if not state.events.is_empty():
@@ -296,6 +298,7 @@ func _next_scenario() -> void:
 	_bots.human_id = controlled_id
 	_frames.clear()
 	_scenario_tick = state.tick
+	_held = {"team": int(s.team), "tick": state.tick}
 	_decisions = [0, 0]
 	_had_ball = false
 	_hud.bars = []

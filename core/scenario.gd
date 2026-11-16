@@ -18,19 +18,27 @@ static func problems(name: String, s: Dictionary, objectives: Dictionary) -> Arr
 	return found
 
 
-static func outcome(s: Dictionary, state: WorldState, elapsed: float) -> String:
+static func track(held: Dictionary, state: WorldState) -> void:
+	var owner := state.player_by_id(state.ball.owner_id)
+	if owner != null and owner.team != held.get("team", -1):
+		held.team = owner.team
+		held.tick = state.tick
+
+
+static func outcome(s: Dictionary, state: WorldState, elapsed: float, held: Dictionary, t: Dictionary) -> String:
 	for event in state.events:
 		if event.type == "goal":
 			return "won" if event.team == 0 else "lost"
 	var owner := state.player_by_id(state.ball.owner_id)
 	var upfield: float = state.ball.pos.x / state.pitch.length
+	var kept: bool = (state.tick - held.tick) / t.sim.tick_rate >= t.scenario.keep_s
 	if s.team == 0:
-		if owner != null and owner.team == 1:
+		if held.team == 1 and kept:
 			return "lost"
-		if owner != null and upfield >= s.reach:
+		if owner != null and owner.team == 0 and upfield >= s.reach:
 			return "won"
 		return "lost" if elapsed >= s.time_s else ""
-	if owner != null and owner.team == 0:
+	if held.team == 0 and kept:
 		return "won"
 	if upfield <= s.deny:
 		return "lost"

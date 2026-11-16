@@ -122,6 +122,17 @@
 						0.0,
 						0.0
 					]
+				},
+				"bot": {
+					"pass_speed_base": 8.0,
+					"pass_speed_per_m": 0.35,
+					"edge_inset": 3.0,
+					"keeper_pass_penalty": 0.6,
+					"show_count": 1,
+					"pass_min_open": 0.5
+				},
+				"ball": {
+					"rolling_friction": 0.35
 				}
 			}
 		},
@@ -189,8 +200,7 @@
 					"shoot_range": 22.0
 				},
 				"kick": {
-					"shot_speed": 30.0,
-					"pass_speed_max": 28.0
+					"shot_speed": 30.0
 				},
 				"lane": {
 					"max_pass_distance": 45.0
@@ -198,7 +208,13 @@
 				"bot": {
 					"zone_mark_radius": 10.0,
 					"gk_claim_radius": 12.0,
-					"shot_post_margin": 0.8
+					"shot_post_margin": 0.8,
+					"pass_speed_base": 8.0,
+					"pass_speed_per_m": 0.3,
+					"edge_inset": 4.0,
+					"keeper_pass_penalty": 0.6,
+					"pass_min_open": 0.5,
+					"show_count": 1
 				},
 				"control_mode": "locked_position",
 				"visual": {
@@ -218,6 +234,9 @@
 						0.0,
 						0.0
 					]
+				},
+				"ball": {
+					"rolling_friction": 0.35
 				}
 			},
 			"difficulty": {

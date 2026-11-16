@@ -138,10 +138,10 @@ func _on_ball() -> Intent:
 	for option in LaneMath.rank_options(snap, me.id, dir, t):
 		var mate := _player(option.id)
 		var offset: Vector2 = mate.pos - me.pos
-		if offset.length() < b.min_pass_distance:
+		if offset.length() < b.min_pass_distance or option.openness < b.pass_min_open:
 			continue
 		var turn := absf(angle_difference(me.facing, offset.angle())) / PI
-		var value := _noisy(option.value - w.turn * turn)
+		var value := _noisy(option.value - w.turn * turn - (b.keeper_pass_penalty if mate.role == "gk" else 0.0))
 		if value > best_value:
 			best_value = value
 			best = _pass(mate)
@@ -175,7 +175,7 @@ func _on_ball() -> Intent:
 		if absf(probe.x) > half.x or absf(probe.y) > half.y:
 			continue
 		var ahead := LaneMath.space_score(probe, opp_pos, t)
-		var gain: float = (probe.x - me.pos.x) * dir / snap.pitch.length
+		var gain: float = (probe.x - me.pos.x) * dir / t.lane.progress_distance
 		var swerve := absf(angle_difference(me.facing, heading.angle())) / PI
 		var value: float = w.dribble * (ahead + here) * 0.5 + t.lane.weights.progression * gain - w.swerve * swerve
 		if value > run_value:
@@ -223,17 +223,23 @@ func _support() -> Intent:
 	var anchor := (_anchor() + Vector2(dir * depth, 0.0)).clamp(-half, half)
 	var points := [anchor]
 	var count := int(b.support_points)
+	var closer := 0
+	for mate in _outfield(mates):
+		closer += int(mate.id != holder.id and mate.pos.distance_to(ball_at) < me.pos.distance_to(ball_at))
+	var showing: bool = closer < b.show_count
 	for i in count:
 		var offset: Vector2 = Vector2.from_angle(TAU * i / count) * b.support_radius
 		points.append((anchor + offset).clamp(-half, half))
 		points.append((anchor + offset * 0.5).clamp(-half, half))
+		if showing:
+			points.append((me.pos + offset * 0.75).clamp(-half, half))
 	var best := anchor
 	var best_value := -INF
 	for point: Vector2 in points:
 		var nearest_mate := INF
 		for mate in mates:
 			nearest_mate = minf(nearest_mate, point.distance_to(mate.pos))
-		var value: float = w.lane * LaneMath.lane_openness(ball_at, point, opp_pos, t) \
+		var value: float = w.lane * (b.show_lane if showing else 1.0) * LaneMath.lane_openness(ball_at, point, opp_pos, t) \
 			+ w.space * LaneMath.space_score(point, opp_pos, t) \
 			+ w.zone * (point.x * dir / snap.pitch.length + 0.5) \
 			+ w.spacing * minf(1.0, nearest_mate / b.spacing_radius) \
@@ -241,7 +247,7 @@ func _support() -> Intent:
 		if value > best_value:
 			best_value = value
 			best = point
-	return _go(best, sprint if depth > 0.0 else jog)
+	return _go(best, sprint if depth > 0.0 or showing else jog)
 
 
 func _defend() -> Intent:
@@ -271,7 +277,7 @@ func _defend() -> Intent:
 
 
 func _anchor() -> Vector2:
-	var half := Vector2(snap.pitch.length, snap.pitch.width) * 0.5
+	var half: Vector2 = Vector2(snap.pitch.length, snap.pitch.width) * 0.5 - Vector2.ONE * b.edge_inset
 	var shifted := Roles.anchor(role, snap, me.team) + Vector2(dir * objective.line_offset, 0.0)
 	return shifted.clamp(-half, half)
 
