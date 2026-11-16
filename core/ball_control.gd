@@ -9,6 +9,10 @@ const Action = PlayerCommand.Action
 static func update(state: WorldState, commands: Dictionary, dt: float, t: Dictionary, rng: RandomNumberGenerator) -> void:
 	var ball := state.ball
 	var c: Dictionary = t.control
+	ball.touch_wait = maxf(0.0, ball.touch_wait - dt)
+	for player in state.players:
+		update_gaze_penalty(player, ball, dt, t)
+
 	var owner := state.player_by_id(ball.owner_id)
 	if owner != null and not _near(ball, owner, c.radius, c.max_height):
 		ball.owner_id = -1
@@ -22,14 +26,22 @@ static func update(state: WorldState, commands: Dictionary, dt: float, t: Dictio
 			if _near(ball, player, t.tackle.radius, c.max_height) and rng.randf() < t.tackle.chance_per_s * dt:
 				owner = player
 				fresh = true
-				_take(state, player, true)
 				break
-
-	if owner == null:
+	else:
 		owner = _claimant(state, commands, c)
-		if owner != null:
-			fresh = true
-			_take(state, owner, false)
+		fresh = owner != null
+
+	var error := 0.0
+	if fresh:
+		var trapping := _action(commands, owner) == Action.TRAP
+		var quality := _arrival_quality(ball, owner, trapping, t)
+		if quality < t.first_touch.clean_min:
+			error = 1.0 - quality
+		_take(state, owner, ball.owner_id != -1, quality, touch_outcome(quality, t))
+		if trapping:
+			_set_flat_vel(ball, owner.vel)
+		else:
+			_touch(ball, owner, t)
 
 	for player in state.players:
 		var action := _action(commands, player)
@@ -43,11 +55,61 @@ static func update(state: WorldState, commands: Dictionary, dt: float, t: Dictio
 
 	if owner == null:
 		return
-	if _action(commands, owner) == Action.TRAP:
-		_set_flat_vel(ball, owner.vel)
-	elif fresh or _touch_due(ball, owner, t.dribble):
+	if not fresh:
+		if ball.touch_wait > 0.0 or not _touch_due(ball, owner, t.dribble):
+			return
 		_touch(ball, owner, t)
-		_event(state, "touch", owner.id)
+	error = maxf(error, owner.control_penalty)
+	if error > 0.0:
+		var spread := deg_to_rad(t.touch.max_error_deg) * error
+		var stray := Vector2.from_angle(owner.body_yaw + rng.randf_range(-spread, spread))
+		_set_flat_vel(ball, _flat(ball.vel) + stray * t.touch.max_error_speed * error * rng.randf())
+	ball.touch_wait = t.dribble.touch_interval
+	_event(state, "touch", owner.id, {"error": error})
+
+
+static func update_gaze_penalty(player: WorldState.PlayerState, ball: WorldState.BallState, dt: float, t: Dictionary) -> void:
+	var g: Dictionary = t.gaze
+	var yaw := player.body_yaw + player.head_yaw
+	var pitch := player.head_pitch
+	var view := Vector3(cos(pitch) * cos(yaw), sin(pitch), cos(pitch) * sin(yaw))
+	var to_ball := ball.pos - Vector3(player.pos.x, t.player.eye_height, player.pos.y)
+	var away := view.angle_to(to_ball) > deg_to_rad(g.angle_threshold_deg)
+	player.look_away_time = player.look_away_time + dt if away else 0.0
+	player.pitch_up_time = player.pitch_up_time + dt if pitch > deg_to_rad(g.pitch_threshold_deg) else 0.0
+	if ball.owner_id == player.id and not _watching(player, g):
+		var rate: float = g.rise_rate * (g.sprint_multiplier if player.sprinting else 1.0)
+		player.control_penalty = minf(1.0, player.control_penalty + rate * dt)
+	else:
+		player.control_penalty = maxf(0.0, player.control_penalty - g.decay_rate * dt)
+
+
+static func first_touch_quality(ball_speed: float, pass_to_facing_angle: float, oriented: bool, t: Dictionary) -> float:
+	var f: Dictionary = t.first_touch
+	var pace := clampf(ball_speed / t.control.max_ball_speed, 0.0, 1.0)
+	var cost: float = f.speed_weight + f.angle_weight * absf(pass_to_facing_angle) / PI
+	if not oriented:
+		cost += f.unoriented_weight
+	return clampf(1.0 - pace * cost, 0.0, 1.0)
+
+
+static func touch_outcome(quality: float, t: Dictionary) -> String:
+	if quality >= t.first_touch.clean_min:
+		return "clean"
+	return "loose" if quality >= t.first_touch.loose_min else "lost"
+
+
+static func _watching(player: WorldState.PlayerState, g: Dictionary) -> bool:
+	return maxf(player.look_away_time, player.pitch_up_time) <= g.grace_s
+
+
+static func _arrival_quality(ball: WorldState.BallState, player: WorldState.PlayerState, trapping: bool, t: Dictionary) -> float:
+	var rel := _flat(ball.vel) - player.vel
+	var speed := rel.length()
+	var angle := 0.0 if speed == 0.0 else angle_difference(player.body_yaw, (-rel).angle())
+	if trapping:
+		speed /= t.control.trap_speed_factor
+	return first_touch_quality(speed, angle, _watching(player, t.gaze), t)
 
 
 static func _action(commands: Dictionary, player: WorldState.PlayerState) -> int:
@@ -87,12 +149,12 @@ static func _claimant(state: WorldState, commands: Dictionary, c: Dictionary) ->
 	return best
 
 
-static func _take(state: WorldState, player: WorldState.PlayerState, tackle: bool) -> void:
+static func _take(state: WorldState, player: WorldState.PlayerState, tackle: bool, quality: float, outcome: String) -> void:
 	var ball := state.ball
 	var previous := state.player_by_id(ball.last_touch_id)
 	if previous != null and previous.team != player.team:
 		_event(state, "turnover", player.id, {"from_id": previous.id, "tackle": tackle})
-	_event(state, "receive", player.id, {"from_id": ball.pass_from_id, "target_id": ball.pass_target_id})
+	_event(state, "receive", player.id, {"from_id": ball.pass_from_id, "target_id": ball.pass_target_id, "quality": quality, "outcome": outcome})
 	ball.owner_id = player.id
 	ball.last_touch_id = player.id
 	ball.pass_from_id = -1

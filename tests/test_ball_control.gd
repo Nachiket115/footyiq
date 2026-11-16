@@ -7,6 +7,7 @@ const Sim = preload("res://core/sim.gd")
 const BallControl = preload("res://core/ball_control.gd")
 
 const DT := 1.0 / 60.0
+const EYES_DOWN := -0.7
 
 var cfg := Config.load_all("res://config")
 var t: Dictionary = cfg["tuning"]
@@ -31,6 +32,7 @@ func _cmd(id: int, action := PlayerCommand.Action.NONE, power := 0.0) -> PlayerC
 	cmd.player_id = id
 	cmd.action = action
 	cmd.power = power
+	cmd.look_pitch = EYES_DOWN
 	return cmd
 
 
@@ -230,3 +232,172 @@ func test_ball_on_player_centre_stays_finite() -> void:
 	var state := _state([Vector2.ZERO], Vector2.ZERO)
 	_run(state, 0.5, null)
 	check(is_finite(state.ball.pos.x) and is_finite(state.ball.vel.x), "finite")
+
+
+func _carrier(pitch: float, head_yaw := 0.0) -> WorldState:
+	var state := _state([Vector2.ZERO])
+	state.ball.owner_id = 0
+	state.players[0].head_pitch = pitch
+	state.players[0].head_yaw = head_yaw
+	return state
+
+
+func _watch(state: WorldState, seconds: float) -> float:
+	for i in roundi(seconds * 60.0):
+		BallControl.update_gaze_penalty(state.players[0], state.ball, DT, t)
+	return state.players[0].control_penalty
+
+
+func test_no_penalty_while_looking_at_the_ball() -> void:
+	check_eq(_watch(_carrier(EYES_DOWN), 5.0), 0.0, "penalty")
+
+
+func test_no_penalty_inside_grace() -> void:
+	check_eq(_watch(_carrier(0.0), t.gaze.grace_s - 0.05), 0.0, "penalty")
+
+
+func test_penalty_rises_after_0_6s_looking_away() -> void:
+	check(_watch(_carrier(0.0), t.gaze.grace_s + 0.5) > 0.0, "level gaze over a ball at the feet")
+	for sample in [[0.0, false], [100.0, true]]:
+		var state := _carrier(0.0, deg_to_rad(sample[0]))
+		state.ball.pos = Vector3(5.0, t.ball.radius, 0.0)
+		check_eq(_watch(state, t.gaze.grace_s + 0.5) > 0.0, sample[1], "ball 5 m ahead, head turned %s degrees" % sample[0])
+
+
+func test_penalty_rises_when_pitch_above_25() -> void:
+	var state := _carrier(deg_to_rad(t.gaze.pitch_threshold_deg + 5.0))
+	state.ball.pos = Vector3(3.0, 3.0, 0.0)
+	check_eq(state.players[0].look_away_time, 0.0, "ball is inside the view angle")
+	check(_watch(state, t.gaze.grace_s + 0.5) > 0.0, "penalty")
+	check_eq(state.players[0].look_away_time, 0.0, "only the pitch rule fired")
+
+
+func test_penalty_only_rises_for_the_carrier() -> void:
+	var state := _carrier(0.0)
+	state.ball.owner_id = -1
+	check_eq(_watch(state, 3.0), 0.0, "penalty")
+	check(state.players[0].look_away_time > 2.9, "look-away time is still tracked")
+
+
+func test_sprint_raises_penalty_faster() -> void:
+	var jogging := _carrier(0.0)
+	var sprinting := _carrier(0.0)
+	sprinting.players[0].sprinting = true
+	var slow := _watch(jogging, t.gaze.grace_s + 0.5)
+	var fast := _watch(sprinting, t.gaze.grace_s + 0.5)
+	check_near(fast, slow * t.gaze.sprint_multiplier, 1e-4, "sprint multiplier")
+
+
+func test_penalty_decays_when_looking_back() -> void:
+	var state := _carrier(0.0)
+	state.players[0].sprinting = true
+	var before := _watch(state, 3.0)
+	state.players[0].head_pitch = EYES_DOWN
+	var after := _watch(state, 0.5)
+	check(before > 0.5, "penalty built up, got %s" % before)
+	check_eq(after, 0.0, "gone half a second after looking back")
+
+
+func _sprint_cmd(pitch: float) -> PlayerCommand:
+	var cmd := _cmd(0)
+	cmd.move = Vector2(0.0, 1.0)
+	cmd.sprint = true
+	cmd.look_pitch = pitch
+	return cmd
+
+
+func _time_to_lose(rng_seed: int, cmd: PlayerCommand, limit_s: float) -> float:
+	var state := _state([Vector2.ZERO])
+	Sim.seed_rng(state, rng_seed)
+	Sim.step(state, [_cmd(0)], cfg)
+	for i in int(limit_s * 60.0):
+		Sim.step(state, [cmd], cfg)
+		if state.ball.owner_id != 0:
+			return (i + 1) / 60.0
+	return INF
+
+
+func test_staring_upfield_sprinting_loses_ball_within_3s() -> void:
+	var times := []
+	for rng_seed in 100:
+		times.append(_time_to_lose(rng_seed, _sprint_cmd(0.0), 3.0))
+	times.sort()
+	var lost := times.filter(func(x: float) -> bool: return x != INF).size()
+	check(lost >= 90, "lost in %s of 100 runs" % lost)
+	check_near(times[50], 2.0, 0.4, "median time to lose the ball")
+	check(times[0] > t.gaze.grace_s, "never inside the grace period, earliest %s" % times[0])
+
+
+func test_eyes_on_ball_keeps_it_10s() -> void:
+	var kept := 0
+	for rng_seed in 100:
+		kept += int(_time_to_lose(rng_seed, _sprint_cmd(EYES_DOWN), 10.0) == INF)
+	check(kept >= 95, "kept in %s of 100 runs" % kept)
+
+
+func test_short_scan_while_jogging_keeps_the_ball() -> void:
+	var kept := 0
+	for rng_seed in 100:
+		var state := _state([Vector2.ZERO])
+		Sim.seed_rng(state, rng_seed)
+		var cmd := _cmd(0)
+		cmd.move = Vector2(0.0, 1.0)
+		for cycle in 4:
+			cmd.look_pitch = 0.0
+			_run(state, 1.5, cmd)
+			cmd.look_pitch = EYES_DOWN
+			_run(state, 1.0, cmd)
+		kept += int(state.ball.owner_id == 0)
+	check(kept >= 95, "kept in %s of 100 runs" % kept)
+
+
+func test_looking_back_recovers_control() -> void:
+	var recovered := 0
+	for rng_seed in 20:
+		var state := _state([Vector2.ZERO])
+		Sim.seed_rng(state, rng_seed)
+		Sim.step(state, [_cmd(0)], cfg)
+		_run(state, 4.0, _sprint_cmd(0.0))
+		var player := state.players[0]
+		var cmd := _cmd(0)
+		for i in 600:
+			if state.ball.owner_id == 0:
+				break
+			var bearing := (_flat(state.ball.pos) - player.pos).angle()
+			cmd.move = Vector2(clampf(angle_difference(player.body_yaw, bearing) * 4.0, -1.0, 1.0), 1.0)
+			Sim.step(state, [cmd], cfg)
+		_run(state, 5.0, _sprint_cmd(EYES_DOWN))
+		recovered += int(state.ball.owner_id == 0)
+	check(recovered >= 19, "recovered and kept in %s of 20 runs" % recovered)
+
+
+func test_first_touch_worse_for_faster_ball() -> void:
+	var slow: float = BallControl.first_touch_quality(3.0, 0.0, true, t)
+	var fast: float = BallControl.first_touch_quality(11.0, 0.0, true, t)
+	check(fast < slow, "fast %s, slow %s" % [fast, slow])
+	check_eq(BallControl.first_touch_quality(0.0, PI, false, t), 1.0, "a still ball is always clean")
+	check(BallControl.first_touch_quality(99.0, PI, false, t) >= 0.0, "never below zero")
+
+
+func test_first_touch_worse_when_facing_away() -> void:
+	var facing: float = BallControl.first_touch_quality(8.0, 0.0, true, t)
+	var away: float = BallControl.first_touch_quality(8.0, PI, true, t)
+	var unready: float = BallControl.first_touch_quality(8.0, 0.0, false, t)
+	check(away < facing, "back to the pass: %s vs %s" % [away, facing])
+	check(unready < facing, "not looking: %s vs %s" % [unready, facing])
+
+
+func test_touch_outcome_labels() -> void:
+	check_eq(BallControl.touch_outcome(1.0, t), "clean", "top")
+	check_eq(BallControl.touch_outcome(t.first_touch.clean_min - 0.01, t), "loose", "middle")
+	check_eq(BallControl.touch_outcome(t.first_touch.loose_min - 0.01, t), "lost", "bottom")
+
+
+func test_receive_event_reports_first_touch() -> void:
+	var state := _state([Vector2.ZERO])
+	state.players[0].head_pitch = EYES_DOWN
+	state.ball.vel = Vector3(-6.0, 0.0, 0.0)
+	_update(state)
+	check_eq(state.events[0].type, "receive", "event")
+	check_eq(state.events[0].get("outcome"), "clean", "outcome")
+	check(state.events[0].get("quality", 0.0) > t.first_touch.clean_min, "quality")

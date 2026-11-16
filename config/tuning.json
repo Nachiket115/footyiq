@@ -52,7 +52,27 @@
 	"dribble": {
 		"lead_distance": 0.6,
 		"slack": 0.15,
-		"touch_speed_factor": 1.2
+		"touch_speed_factor": 1.2,
+		"touch_interval": 0.15
+	},
+	"gaze": {
+		"pitch_threshold_deg": 25.0,
+		"angle_threshold_deg": 60.0,
+		"grace_s": 0.6,
+		"rise_rate": 0.15,
+		"sprint_multiplier": 4.0,
+		"decay_rate": 4.0
+	},
+	"touch": {
+		"max_error_deg": 50.0,
+		"max_error_speed": 5.0
+	},
+	"first_touch": {
+		"speed_weight": 0.3,
+		"angle_weight": 0.4,
+		"unoriented_weight": 0.3,
+		"clean_min": 0.7,
+		"loose_min": 0.35
 	},
 	"kick": {
 		"pass_speed_min": 8.0,

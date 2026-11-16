@@ -27,6 +27,7 @@ class BallState:
 	var last_touch_id := -1
 	var pass_from_id := -1
 	var pass_target_id := -1
+	var touch_wait := 0.0
 
 
 var schema_version := SCHEMA_VERSION
