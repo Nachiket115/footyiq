@@ -102,14 +102,14 @@
 				},
 				"defensive_transition": {
 					"center": [
-						-0.29,
+						-0.23,
 						-0.24
 					],
 					"tolerance": 12.0
 				},
 				"press": {
 					"center": [
-						-0.215,
+						-0.165,
 						-0.26
 					],
 					"tolerance": 12.0
@@ -188,14 +188,14 @@
 				},
 				"defensive_transition": {
 					"center": [
-						-0.29,
+						-0.23,
 						0.24
 					],
 					"tolerance": 12.0
 				},
 				"press": {
 					"center": [
-						-0.215,
+						-0.165,
 						0.26
 					],
 					"tolerance": 12.0
@@ -274,14 +274,14 @@
 				},
 				"defensive_transition": {
 					"center": [
-						-0.3,
+						-0.24,
 						-0.07
 					],
 					"tolerance": 12.0
 				},
 				"press": {
 					"center": [
-						-0.235,
+						-0.175,
 						-0.08
 					],
 					"tolerance": 12.0
@@ -361,14 +361,14 @@
 				},
 				"defensive_transition": {
 					"center": [
-						-0.3,
+						-0.24,
 						0.07
 					],
 					"tolerance": 12.0
 				},
 				"press": {
 					"center": [
-						-0.235,
+						-0.175,
 						0.08
 					],
 					"tolerance": 12.0
@@ -448,14 +448,14 @@
 				},
 				"defensive_transition": {
 					"center": [
-						-0.16,
+						-0.13,
 						-0.26
 					],
 					"tolerance": 12.0
 				},
 				"press": {
 					"center": [
-						-0.092,
+						-0.082,
 						-0.28
 					],
 					"tolerance": 12.0
@@ -542,14 +542,14 @@
 				},
 				"defensive_transition": {
 					"center": [
-						-0.16,
+						-0.13,
 						0.26
 					],
 					"tolerance": 12.0
 				},
 				"press": {
 					"center": [
-						-0.092,
+						-0.082,
 						0.28
 					],
 					"tolerance": 12.0
@@ -636,14 +636,14 @@
 				},
 				"defensive_transition": {
 					"center": [
-						-0.17,
+						-0.14,
 						-0.08
 					],
 					"tolerance": 12.0
 				},
 				"press": {
 					"center": [
-						-0.102,
+						-0.092,
 						-0.09
 					],
 					"tolerance": 12.0
@@ -723,14 +723,14 @@
 				},
 				"defensive_transition": {
 					"center": [
-						-0.17,
+						-0.14,
 						0.08
 					],
 					"tolerance": 12.0
 				},
 				"press": {
 					"center": [
-						-0.102,
+						-0.092,
 						0.09
 					],
 					"tolerance": 12.0
@@ -810,14 +810,14 @@
 				},
 				"defensive_transition": {
 					"center": [
-						0.0,
+						-0.04,
 						-0.07
 					],
 					"tolerance": 12.0
 				},
 				"press": {
 					"center": [
-						0.085,
+						0.025,
 						-0.08
 					],
 					"tolerance": 12.0
@@ -904,14 +904,14 @@
 				},
 				"defensive_transition": {
 					"center": [
-						0.0,
+						-0.04,
 						0.07
 					],
 					"tolerance": 12.0
 				},
 				"press": {
 					"center": [
-						0.085,
+						0.025,
 						0.08
 					],
 					"tolerance": 12.0

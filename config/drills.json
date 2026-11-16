@@ -134,6 +134,20 @@
 				"ball": {
 					"rolling_friction": 0.35
 				}
+			},
+			"difficulty": {
+				"easy": {
+					"press_count": 1,
+					"tackle_rate": 0.35
+				},
+				"medium": {
+					"press_count": 1,
+					"tackle_rate": 0.7
+				},
+				"hard": {
+					"press_count": 2,
+					"tackle_rate": 1.0
+				}
 			}
 		},
 		"scenarios": [
@@ -206,7 +220,7 @@
 					"max_pass_distance": 45.0
 				},
 				"bot": {
-					"zone_mark_radius": 10.0,
+					"zone_mark_radius": 7.0,
 					"gk_claim_radius": 12.0,
 					"shot_post_margin": 0.8,
 					"pass_speed_base": 8.0,
@@ -241,13 +255,19 @@
 			},
 			"difficulty": {
 				"easy": {
-					"press_radius": 6.0
+					"press_radius": 5.0,
+					"press_count": 1,
+					"tackle_rate": 0.35
 				},
 				"medium": {
-					"press_radius": 10.0
+					"press_radius": 10.0,
+					"press_count": 1,
+					"tackle_rate": 0.7
 				},
 				"hard": {
-					"press_radius": 14.0
+					"press_radius": 14.0,
+					"press_count": 2,
+					"tackle_rate": 1.0
 				}
 			}
 		},

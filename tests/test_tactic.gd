@@ -160,3 +160,16 @@ func test_drill_overrides_apply_only_to_that_drill() -> void:
 	check_eq(cfg["tuning"].goal.height, 2.0, "base config untouched")
 	check(big["drills"]["11v11"].team_roles[0].has("dm") and big["drills"]["11v11"].team_roles[1].has("st"), "home plays 4-3-3, away plays 4-4-2")
 	check(big["tuning"].goal.dive_reach < big["drills"]["11v11"].pitch.goal_width * 0.5, "a full dive still leaves the corners")
+
+
+func test_442_block_is_compact_with_the_ball_in_midfield() -> void:
+	var roles: Dictionary = cfg["tactics"]["11v11_4-4-2"].roles
+	var snap := PitchSnapshot.new()
+	snap.pitch = cfg["drills"]["11v11"].pitch
+	for phase: String in ["defensive_transition", "press"]:
+		snap.ball_pos = Vector2(0.0 if phase == "defensive_transition" else 0.33 * 105.0, 0.0)
+		var xs := []
+		for role: String in roles:
+			if role != "gk":
+				xs.append(Tactic.target_zone(roles[role], phase, snap, 1).center.x)
+		check(xs.max() - xs.min() <= 23.0, "%s block depth %.1f m" % [phase, xs.max() - xs.min()])

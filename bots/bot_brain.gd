@@ -251,14 +251,16 @@ func _support() -> Intent:
 
 
 func _defend() -> Intent:
-	var presser := me
+	var closer := 0
+	var deepest := me
 	for defender in _outfield(mates):
-		if defender.pos.distance_to(ball_at) < presser.pos.distance_to(ball_at):
-			presser = defender
-	if presser.id == me.id:
+		closer += int(defender.pos.distance_to(ball_at) < me.pos.distance_to(ball_at))
+		if defender.pos.distance_to(own_goal) < deepest.pos.distance_to(own_goal):
+			deepest = defender
+	if closer == 0 or (closer < diff.press_count and deepest.id != me.id):
 		if me.pos.distance_to(ball_at) < diff.press_radius * objective.press_scale:
 			return _press()
-		if holder.role != "gk":
+		if closer == 0 and holder.role != "gk":
 			return _mark(holder)
 
 	var anchor := _anchor()
@@ -286,6 +288,7 @@ func _press() -> Intent:
 	if snap.owner_id == -1:
 		return _collect()
 	var in_reach: bool = me.pos.distance_to(snap.ball_pos) < t.tackle.radius * b.tackle_reach
+	in_reach = in_reach and (diff.tackle_rate >= 1.0 or rng.randf() < diff.tackle_rate)
 	var chase := _go(snap.ball_pos, sprint, Action.TACKLE if in_reach else Action.NONE)
 	chase.desired_velocity = Steering.seek(me.pos, snap.ball_pos, sprint)
 	return chase

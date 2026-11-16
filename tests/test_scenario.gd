@@ -88,3 +88,13 @@ func test_result_gives_a_bar_per_score_and_a_line_per_missed_trigger() -> void:
 	var score := {"structure": {"build_up": 1.0, "press": 0.5}, "run": {}, "duty": {"press": 0.0}, "missed_triggers": [{"t": 14.2, "trigger": "possession_lost", "response": "run_back"}]}
 	check_eq(Scenario.bars(score), [["Shape", 0.75], ["Duties", 0.0]], "bars skip kinds with no samples")
 	check_eq(Scenario.misses(score, 10.0), ["Missed at 4 s: run back after possession lost"], "times count from the scenario start")
+
+
+func test_defend_the_box_is_lost_when_they_carry_it_to_the_byline_zone() -> void:
+	var box: Dictionary = all["defend_the_box"]
+	var state: Variant = _start("defend_the_box")
+	var theirs := _held(state, 1, 5.0)
+	state.ball.pos.x = box.deny * state.pitch.length - 1.0
+	check_eq(Scenario.outcome(box, state, 1.0, theirs, t), "lost", "their carrier is inside the line")
+	state.ball.owner_id = -1
+	check_eq(Scenario.outcome(box, state, 1.0, theirs, t), "", "a loose ball there is not a loss")

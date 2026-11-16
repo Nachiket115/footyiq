@@ -275,3 +275,49 @@ func test_teammate_makes_its_run_when_the_trigger_player_has_the_ball() -> void:
 	check(run.x > t.player.jog_speed, "the wide player sprints forward when the striker receives: %s" % run)
 	check(run.x > _decide(idle, 1).desired_velocity.x + 1.0, "and not when the centre-back has it")
 
+
+
+func _decide_at(snap: PitchSnapshot, id: int, press_count: int) -> Intent:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 1
+	var level: Dictionary = cfg["difficulty"].medium.duplicate()
+	level.press_count = press_count
+	level.press_radius = 20.0
+	var params := {"self_id": id, "tuning": t, "difficulty": level, "objectives": {"attack": cfg["objectives"].build_up, "defend": cfg["objectives"].mid_block}, "rng": rng}
+	return BotBrain.decide(snap, drill.roles[snap.players[id].role], params)
+
+
+func _toward_ball(snap: PitchSnapshot, id: int, press_count: int) -> bool:
+	var vel := _decide_at(snap, id, press_count).desired_velocity
+	return vel.dot(snap.ball_pos - snap.players[id].pos) > 0.0 and vel.length() > t.player.jog_speed
+
+
+func test_hard_sends_a_second_presser_but_never_the_last_defender() -> void:
+	var players := [
+		[1, "st", Vector2(0.0, 0.0)],
+		[0, "lm", Vector2(-3.0, 0.0)],
+		[0, "rm", Vector2(-5.0, 2.0)],
+		[0, "cb", Vector2(-6.0, -1.0)],
+	]
+	var snap := _snap(players, Vector2(-0.6, 0.0), 0)
+	check_eq(_decide_at(snap, 2, 1).action == Action.TACKLE or _toward_ball(snap, 2, 1), false, "one presser: the second nearest holds")
+	check(_toward_ball(snap, 2, 2), "two pressers: the second nearest closes down")
+	check(not _toward_ball(snap, 3, 3), "the last defender never joins the press")
+
+
+func test_tackle_rate_sets_how_often_a_presser_in_reach_tackles() -> void:
+	var snap := _snap([
+		[1, "st", Vector2(0.0, 0.0)],
+		[0, "cb", Vector2(-1.0, 0.0)],
+	], Vector2(-0.5, 0.0), 0)
+	var tackles := {0.0: 0, 0.5: 0, 1.0: 0}
+	for rate: float in tackles:
+		for rng_seed in 40:
+			var rng := RandomNumberGenerator.new()
+			rng.seed = rng_seed
+			var level: Dictionary = cfg["difficulty"].medium.duplicate()
+			level.tackle_rate = rate
+			var params := {"self_id": 1, "tuning": t, "difficulty": level, "objectives": {"attack": cfg["objectives"].build_up, "defend": cfg["objectives"].mid_block}, "rng": rng}
+			tackles[rate] += int(BotBrain.decide(snap, drill.roles.cb, params).action == Action.TACKLE)
+	check_eq([tackles[0.0], tackles[1.0]], [0, 40], "never at 0, always at 1")
+	check(tackles[0.5] > 10 and tackles[0.5] < 30, "about half the time at 0.5: %d of 40" % tackles[0.5])

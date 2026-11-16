@@ -6,7 +6,9 @@
 		"press_radius": 3.0,
 		"lane_cover": 0.3,
 		"decision_scale": 0.25,
-		"decision_s": 4.0
+		"decision_s": 4.0,
+		"press_count": 1,
+		"tackle_rate": 1.0
 	},
 	"medium": {
 		"reaction_time": 0.25,
@@ -15,7 +17,9 @@
 		"press_radius": 5.0,
 		"lane_cover": 0.6,
 		"decision_scale": 0.4,
-		"decision_s": 2.5
+		"decision_s": 2.5,
+		"press_count": 1,
+		"tackle_rate": 1.0
 	},
 	"hard": {
 		"reaction_time": 0.12,
@@ -24,6 +28,8 @@
 		"press_radius": 7.0,
 		"lane_cover": 0.9,
 		"decision_scale": 0.7,
-		"decision_s": 1.5
+		"decision_s": 1.5,
+		"press_count": 1,
+		"tackle_rate": 1.0
 	}
 }

@@ -355,6 +355,7 @@
 	},
 	"headless": {
 		"frame_ticks": 6,
+		"sample_ticks": 15,
 		"match_s": 120.0,
 		"wing_depth": 4.0,
 		"wing_inset": 2.0

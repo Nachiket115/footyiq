@@ -35,6 +35,22 @@ It prints one JSON line with home wins, away wins, draws, goals, completed passe
 
 With `--baseline`, the JSON line holds `structure`, `run` and `duty` scores from 0 to 1 for each phase of play, and `missed_triggers` with the match time of each one. Roles, zones and triggers come from the tactic file named by the drill, `config/tactics/5v5_1-2-1.json`.
 
+## Scenario report
+
+Plays every scenario of a drill with bots only, against each opponent difficulty, and prints one JSON line with win rates, opponent pressure and block size. With `--matches` it also plays full matches and reports pass completion, balls out of play and carry times.
+
+```
+godot --headless --path . -s tools/scenario_report.gd -- --drill 11v11 --runs 40 --seed 1 --matches 6
+```
+
+| Option | Default | Meaning |
+|---|---|---|
+| `--drill NAME` | `11v11` | A drill that has scenarios: `11v11` or `7v7` |
+| `--runs N` | 40 | Runs per scenario and difficulty; run *i* uses seed `S + i` |
+| `--seed S` | 1 | First seed |
+| `--matches N` | 0 | Full matches to play for the passing and carry numbers |
+| `--idle ROLE` | none | Leave the home player in that role standing still, as a human who does nothing |
+
 ## Configuration
 
 Every tunable value is in `config/`:

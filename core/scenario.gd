@@ -40,7 +40,7 @@ static func outcome(s: Dictionary, state: WorldState, elapsed: float, held: Dict
 		return "lost" if elapsed >= s.time_s else ""
 	if held.team == 0 and kept:
 		return "won"
-	if upfield <= s.deny:
+	if upfield <= s.deny and (not s.get("deny_owned", false) or (owner != null and owner.team == 1)):
 		return "lost"
 	if elapsed >= s.time_s:
 		return "won" if s.hold else "lost"
