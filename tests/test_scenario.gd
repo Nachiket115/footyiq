@@ -64,6 +64,7 @@ func test_defending_scenario_outcomes() -> void:
 	check_eq(Scenario.outcome(press, state, 1.0), "won", "we won the ball")
 
 
-func test_summary_lists_percentages_and_missed_triggers() -> void:
-	var lines := Scenario.summary({"structure": {"build_up": 1.0, "press": 0.5}, "run": {}, "duty": {"press": 0.0}, "missed_triggers": [{"t": 4.2, "trigger": "possession_lost", "response": "run_back"}]})
-	check_eq(lines, ["Shape  75%", "Duties  0%", "Missed at 4 s: run back after possession lost"] as Array[String], "summary")
+func test_result_gives_a_bar_per_score_and_a_line_per_missed_trigger() -> void:
+	var score := {"structure": {"build_up": 1.0, "press": 0.5}, "run": {}, "duty": {"press": 0.0}, "missed_triggers": [{"t": 14.2, "trigger": "possession_lost", "response": "run_back"}]}
+	check_eq(Scenario.bars(score), [["Shape", 0.75], ["Duties", 0.0]], "bars skip kinds with no samples")
+	check_eq(Scenario.misses(score, 10.0), ["Missed at 4 s: run back after possession lost"], "times count from the scenario start")

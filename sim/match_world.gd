@@ -20,6 +20,7 @@ const PlayerBody = preload("res://sim/player_body.gd")
 const Meshes = preload("res://sim/meshes.gd")
 const BodyIndicator = preload("res://ui/body_indicator.gd")
 const Hud = preload("res://ui/hud.gd")
+const Minimap = preload("res://ui/minimap.gd")
 const Sounds = preload("res://sim/sounds.gd")
 
 const VIEWS := ["chase", "first", "spectator"]
@@ -44,6 +45,7 @@ var _paused_until_ms := 0
 var _view := "chase"
 var _drill: Dictionary
 var _hud: Hud
+var _minimap: Minimap
 var _sounds: Sounds
 var _banner_until_ms := 0
 var _banner := "GOAL"
@@ -100,8 +102,12 @@ func _ready() -> void:
 	add_child(hud)
 	_body_indicator = BodyIndicator.new(t.hud.body_indicator, deg_to_rad(t.player.head_yaw_limit_deg))
 	hud.add_child(_body_indicator)
-	_hud = Hud.new(t.hud.match)
+	_hud = Hud.new(t.hud.match, t.visual.team_colors)
 	hud.add_child(_hud)
+	_minimap = Minimap.new(t.hud.minimap, t.visual.team_colors)
+	_minimap.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_minimap.state = state
+	hud.add_child(_minimap)
 	_sounds = Sounds.new(t.audio)
 	add_child(_sounds)
 	_controller.cam_yaw = state.player_by_id(controlled_id).body_yaw
@@ -245,7 +251,8 @@ func _next_scenario() -> void:
 	_bots.human_id = controlled_id
 	_frames.clear()
 	_scenario_tick = state.tick
-	_hud.lines = []
+	_hud.bars = []
+	_hud.misses = []
 	_sounds.play("whistle")
 	_remember()
 
@@ -255,7 +262,8 @@ func _finish_scenario(result: String) -> void:
 	var me := state.player_by_id(controlled_id)
 	var score := Tactic.score_role(_frames, _drill.team_roles[me.team][me.role], {"player_id": controlled_id, "tuning": t})
 	_banner = result.to_upper()
-	_hud.lines = Scenario.summary(score, _scenario_tick / t.sim.tick_rate)
+	_hud.bars = Scenario.bars(score)
+	_hud.misses = Scenario.misses(score, _scenario_tick / t.sim.tick_rate)
 	_banner_until_ms = Time.get_ticks_msec() + int(t.play.result_s * 1000.0)
 	_paused_until_ms = _banner_until_ms
 	_scenario_index = -1
@@ -278,16 +286,18 @@ func _update_hud(f: float) -> void:
 	var t: Dictionary = cfg["tuning"]
 	_hud.score = state.score
 	_hud.seconds = state.tick / t.sim.tick_rate
-	var task := ""
+	_hud.time_left = -1.0
+	_hud.title = ""
 	if not _scenarios.is_empty() and _scenario_index != -1:
-		_hud.seconds = maxf(0.0, _scenario().time_s - (state.tick - _scenario_tick) / t.sim.tick_rate)
-		task = "%s: %s" % [_scenario().title, _scenario().goal]
+		_hud.time_left = maxf(0.0, _scenario().time_s - (state.tick - _scenario_tick) / t.sim.tick_rate)
+		_hud.title = _scenario().title
+		_hud.goal = _scenario().goal
 	_hud.charge = _controller.charge
-	var keys := []
-	for i in _drill.get("positions", []).size():
-		keys.append("%d %s" % [i + 1, _drill.positions[i].to_upper()])
-	_hud.info = "You: %s     %s" % [state.player_by_id(controlled_id).role.to_upper(), "   ".join(keys)]
-	_hud.task = task
+	var me := state.player_by_id(controlled_id)
+	_minimap.you = controlled_id
+	_minimap.view_yaw = me.body_yaw + _controller.view_yaw if _view == "first" else _controller.cam_yaw
+	_hud.role = me.role.to_upper()
+	_hud.positions = _drill.get("positions", []).map(func(name: String) -> String: return name.to_upper())
 	_hud.banner = _banner if Time.get_ticks_msec() < _banner_until_ms else ""
 	var marked := {controlled_id: "you_color"}
 	if state.ball.owner_id == controlled_id:

@@ -39,8 +39,8 @@ static func outcome(s: Dictionary, state: WorldState, elapsed: float) -> String:
 	return ""
 
 
-static func summary(score: Dictionary, start_s := 0.0) -> Array[String]:
-	var lines: Array[String] = []
+static func bars(score: Dictionary) -> Array:
+	var out := []
 	for kind: Array in [["structure", "Shape"], ["run", "Runs"], ["duty", "Duties"]]:
 		var cells: Dictionary = score.get(kind[0], {})
 		if cells.is_empty():
@@ -48,7 +48,12 @@ static func summary(score: Dictionary, start_s := 0.0) -> Array[String]:
 		var total := 0.0
 		for phase: String in cells:
 			total += cells[phase]
-		lines.append("%s  %d%%" % [kind[1], roundi(100.0 * total / cells.size())])
+		out.append([kind[1], total / cells.size()])
+	return out
+
+
+static func misses(score: Dictionary, start_s := 0.0) -> Array:
+	var out := []
 	for miss: Dictionary in score.get("missed_triggers", []):
-		lines.append("Missed at %.0f s: %s after %s" % [miss.t - start_s, miss.response.replace("_", " "), miss.trigger.replace("_", " ")])
-	return lines
+		out.append("Missed at %.0f s: %s after %s" % [miss.t - start_s, miss.response.replace("_", " "), miss.trigger.replace("_", " ")])
+	return out
