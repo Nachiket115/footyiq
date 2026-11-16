@@ -52,6 +52,24 @@
 		"key:Tab",
 		"joy_button:4"
 	],
+	"position_1": [
+		"key:1"
+	],
+	"position_2": [
+		"key:2"
+	],
+	"position_3": [
+		"key:3"
+	],
+	"position_4": [
+		"key:4"
+	],
+	"position_5": [
+		"key:5"
+	],
+	"next_scenario": [
+		"key:N"
+	],
 	"release_mouse": [
 		"key:Escape"
 	],

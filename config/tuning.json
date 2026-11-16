@@ -133,6 +133,7 @@
 		"shot_distance_falloff": 0.7,
 		"dribble_angles_deg": [-60.0, -30.0, 0.0, 30.0, 60.0],
 		"dribble_probe": 4.0,
+		"run_depth": 2.0,
 		"dribble_sprint": 0.4,
 		"support_radius": 8.0,
 		"support_points": 8,
@@ -151,7 +152,7 @@
 		"contest_margin": 0.4,
 		"weights": {
 			"shoot": 1.6,
-			"dribble": 1.2,
+			"dribble": 1.0,
 			"hold": 0.3,
 			"turn": 0.2,
 			"swerve": 0.5,
@@ -165,6 +166,7 @@
 	"lane": {
 		"pass_speed": 15.0,
 		"reach_radius": 1.0,
+		"behind_radius": 1.0,
 		"opp_speed": 4.0,
 		"margin": 2.0,
 		"space_radius": 6.0,
@@ -350,6 +352,11 @@
 		"match_s": 120.0,
 		"wing_depth": 4.0,
 		"wing_inset": 2.0
+	},
+	"play": {
+		"drill": "11v11",
+		"scenarios": true,
+		"result_s": 5.0
 	},
 	"debug": {
 		"drill": "5v5",

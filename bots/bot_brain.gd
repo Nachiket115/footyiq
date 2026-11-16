@@ -206,9 +206,21 @@ func _shot_aim() -> Vector2:
 	return Vector2(goal.x, -side)
 
 
+func _run_depth() -> float:
+	var feeders := [holder.role]
+	for mate in mates:
+		if mate.id == snap.last_touch_id:
+			feeders.append(mate.role)
+	for trigger: Dictionary in role.get("triggers", []):
+		if trigger.response == "run_forward" and trigger.event == "mate_receives" and trigger.role in feeders:
+			return trigger.distance * b.run_depth
+	return 0.0
+
+
 func _support() -> Intent:
-	var anchor := _anchor()
 	var half := Vector2(snap.pitch.length, snap.pitch.width) * 0.5 - Vector2.ONE
+	var depth := _run_depth()
+	var anchor := (_anchor() + Vector2(dir * depth, 0.0)).clamp(-half, half)
 	var points := [anchor]
 	var count := int(b.support_points)
 	for i in count:
@@ -225,11 +237,11 @@ func _support() -> Intent:
 			+ w.space * LaneMath.space_score(point, opp_pos, t) \
 			+ w.zone * (point.x * dir / snap.pitch.length + 0.5) \
 			+ w.spacing * minf(1.0, nearest_mate / b.spacing_radius) \
-			- w.travel * me.pos.distance_to(point) / b.support_radius
+			- (0.0 if depth > 0.0 else w.travel) * me.pos.distance_to(point) / b.support_radius
 		if value > best_value:
 			best_value = value
 			best = point
-	return _go(best, jog)
+	return _go(best, sprint if depth > 0.0 else jog)
 
 
 func _defend() -> Intent:

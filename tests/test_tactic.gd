@@ -134,3 +134,29 @@ func test_run_is_void_when_the_ball_is_lost_inside_the_window() -> void:
 		snap.last_touch_id = 3
 	var score := Tactic.score_role(frames, _one_run(), params)
 	check_eq([score.run, score.missed_triggers], [{}, []], "neither scored nor missed")
+
+
+func test_every_drill_has_valid_tactics_and_spawns_inside_its_pitch() -> void:
+	Config.errors.clear()
+	Config.load_all("res://config")
+	check_eq(Config.errors, [] as Array[String], "config loads without errors")
+	const Roles = preload("res://bots/roles.gd")
+	for name: String in cfg["drills"]:
+		var own := Config.for_drill(cfg, name)
+		var d: Dictionary = own["drills"][name]
+		var state := Roles.spawn(d, own["tuning"])
+		check_eq(state.players.size(), d.teams[0].size() + d.teams[1].size(), "%s player count" % name)
+		for role: String in d.positions:
+			check(d.teams[0].has(role), "%s: selectable position %s exists" % [name, role])
+		for player in state.players:
+			check(absf(player.pos.x) <= d.pitch.length * 0.5 and absf(player.pos.y) <= d.pitch.width * 0.5, "%s %s starts on the pitch" % [name, player.role])
+			check(player.pos.x * (1 if player.team == 0 else -1) <= 0.0 or player.role in ["cf", "st", "lw", "rw"], "%s %s starts in its own half: %s" % [name, player.role, player.pos])
+
+
+func test_drill_overrides_apply_only_to_that_drill() -> void:
+	var big := Config.for_drill(cfg, "11v11")
+	check_eq(big["tuning"].goal.height, 2.44, "full-size goal")
+	check_eq(big["tuning"].debug.drill, "11v11", "drill selected")
+	check_eq(cfg["tuning"].goal.height, 2.0, "base config untouched")
+	check(big["drills"]["11v11"].team_roles[0].has("dm") and big["drills"]["11v11"].team_roles[1].has("st"), "home plays 4-3-3, away plays 4-4-2")
+	check(big["tuning"].goal.dive_reach < big["drills"]["11v11"].pitch.goal_width * 0.5, "a full dive still leaves the corners")

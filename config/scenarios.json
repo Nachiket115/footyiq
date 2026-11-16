@@ -1,0 +1,40 @@
+{
+	"build_from_the_back": {
+		"title": "Build from the back",
+		"goal": "Play out past halfway without losing the ball",
+		"team": 0,
+		"ball": [-0.44, 0.0],
+		"time_s": 30.0,
+		"reach": 0.0,
+		"objectives": [{"attack": "build_up", "defend": "mid_block"}, {"attack": "build_up", "defend": "press_high"}]
+	},
+	"break_the_block": {
+		"title": "Break the block",
+		"goal": "Get the ball into the final third against a set defence",
+		"team": 0,
+		"ball": [-0.05, 0.0],
+		"time_s": 35.0,
+		"reach": 0.25,
+		"objectives": [{"attack": "build_up", "defend": "mid_block"}, {"attack": "build_up", "defend": "mid_block"}]
+	},
+	"press_high": {
+		"title": "Press high",
+		"goal": "Win the ball back before they play out",
+		"team": 1,
+		"ball": [0.42, 0.0],
+		"time_s": 20.0,
+		"hold": false,
+		"deny": -0.05,
+		"objectives": [{"attack": "build_up", "defend": "press_high"}, {"attack": "build_up", "defend": "mid_block"}]
+	},
+	"defend_the_box": {
+		"title": "Defend the box",
+		"goal": "Keep your shape and stop them scoring",
+		"team": 1,
+		"ball": [-0.2, 0.15],
+		"time_s": 25.0,
+		"hold": true,
+		"deny": -1.0,
+		"objectives": [{"attack": "build_up", "defend": "low_block"}, {"attack": "build_up", "defend": "mid_block"}]
+	}
+}

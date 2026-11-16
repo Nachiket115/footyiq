@@ -4,6 +4,9 @@ var score: Array = [0, 0]
 var seconds := 0.0
 var charge := 0.0
 var banner := ""
+var info := ""
+var task := ""
+var lines: Array[String] = []
 var markers := []
 
 var _s: Dictionary
@@ -29,6 +32,10 @@ func _draw() -> void:
 	draw_rect(Rect2(top - Vector2(12.0, 6.0), Vector2(width + 24.0, _s.font_size + 16.0)), shade)
 	draw_string(_font, top + Vector2(0.0, _s.font_size), line, HORIZONTAL_ALIGNMENT_LEFT, -1, _s.font_size, text)
 
+	draw_string(_font, Vector2(_s.margin, _s.margin + _s.font_size * 0.7), info, HORIZONTAL_ALIGNMENT_LEFT, -1, int(_s.font_size * 0.7), text)
+
+	draw_string(_font, Vector2(_s.margin, _s.margin + _s.font_size * 1.7), task, HORIZONTAL_ALIGNMENT_LEFT, -1, int(_s.font_size * 0.7), Color(_s.you_color as String))
+
 	if charge > 0.0:
 		var bar := Rect2((size.x - _s.bar_width) * 0.5, size.y - _s.bar_bottom, _s.bar_width, _s.bar_height)
 		draw_rect(bar, shade)
@@ -37,6 +44,11 @@ func _draw() -> void:
 	if banner != "":
 		var big := _font.get_string_size(banner, HORIZONTAL_ALIGNMENT_LEFT, -1, _s.banner_size)
 		draw_string(_font, Vector2((size.x - big.x) * 0.5, size.y * 0.4), banner, HORIZONTAL_ALIGNMENT_LEFT, -1, _s.banner_size, text)
+		for i in lines.size():
+			var wide := _font.get_string_size(lines[i], HORIZONTAL_ALIGNMENT_LEFT, -1, _s.font_size).x
+			var at := Vector2((size.x - wide) * 0.5, size.y * 0.4 + (i + 1.5) * _s.font_size * 1.4)
+			draw_rect(Rect2(at - Vector2(8.0, _s.font_size), Vector2(wide + 16.0, _s.font_size * 1.3)), shade)
+			draw_string(_font, at, lines[i], HORIZONTAL_ALIGNMENT_LEFT, -1, _s.font_size, text)
 
 	var m: float = _s.marker_size
 	for marker: Array in markers:

@@ -9,9 +9,11 @@ static func lane_openness(from: Vector2, to: Vector2, opponents: Array, p: Dicti
 	var len_sq := seg.length_squared()
 	var open := 1.0
 	for opp: Vector2 in opponents:
-		var s := clampf((opp - from).dot(seg) / len_sq, 0.0, 1.0) if len_sq > 0.0 else 0.0
-		var closest := from + seg * s
+		var along := (opp - from).dot(seg) / len_sq if len_sq > 0.0 else 0.0
+		var closest := from + seg * clampf(along, 0.0, 1.0)
 		var reach: float = l.reach_radius + l.opp_speed * (closest - from).length() / l.pass_speed
+		if along > 1.0:
+			reach = l.behind_radius
 		open = minf(open, clampf((opp.distance_to(closest) - reach) / l.margin, 0.0, 1.0))
 	return open
 

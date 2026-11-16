@@ -8,9 +8,235 @@
 		},
 		"human_default_role": "rm",
 		"teams": [
-			["gk", "cb", "lm", "rm", "st"],
-			["gk", "cb", "lm", "rm", "st"]
+			[
+				"gk",
+				"cb",
+				"lm",
+				"rm",
+				"st"
+			],
+			[
+				"gk",
+				"cb",
+				"lm",
+				"rm",
+				"st"
+			]
 		],
-		"tactic": "5v5_1-2-1"
+		"tactic": "5v5_1-2-1",
+		"positions": [
+			"cb",
+			"lm",
+			"rm",
+			"st"
+		]
+	},
+	"5v5_2-2": {
+		"pitch": {
+			"length": 40.0,
+			"width": 25.0,
+			"goal_width": 3.0,
+			"boards": false
+		},
+		"human_default_role": "cf",
+		"positions": [
+			"cb",
+			"rcb",
+			"cf",
+			"st"
+		],
+		"teams": [
+			[
+				"gk",
+				"cb",
+				"rcb",
+				"cf",
+				"st"
+			],
+			[
+				"gk",
+				"cb",
+				"lm",
+				"rm",
+				"st"
+			]
+		],
+		"tactic": "5v5_2-2",
+		"away_tactic": "5v5_1-2-1"
+	},
+	"7v7": {
+		"pitch": {
+			"length": 55.0,
+			"width": 37.0,
+			"goal_width": 3.66,
+			"boards": false
+		},
+		"human_default_role": "cm",
+		"positions": [
+			"cb",
+			"cm",
+			"cf",
+			"rw",
+			"lw"
+		],
+		"teams": [
+			[
+				"gk",
+				"cb",
+				"rcb",
+				"lw",
+				"cm",
+				"rw",
+				"cf"
+			],
+			[
+				"gk",
+				"cb",
+				"rcb",
+				"lw",
+				"cm",
+				"rw",
+				"cf"
+			]
+		],
+		"tactic": "7v7_2-3-1",
+		"overrides": {
+			"tuning": {
+				"goal": {
+					"height": 1.83,
+					"keeper_reach": 0.9,
+					"dive_reach": 1.6
+				},
+				"steering": {
+					"shoot_range": 15.0
+				},
+				"control_mode": "locked_position",
+				"debug": {
+					"spectator_pos": [
+						-12.0,
+						14.0,
+						26.0
+					],
+					"spectator_target": [
+						3.0,
+						0.0,
+						0.0
+					]
+				}
+			}
+		},
+		"scenarios": [
+			"build_from_the_back",
+			"break_the_block",
+			"press_high",
+			"defend_the_box"
+		]
+	},
+	"11v11": {
+		"pitch": {
+			"length": 105.0,
+			"width": 68.0,
+			"goal_width": 7.32,
+			"boards": false
+		},
+		"human_default_role": "cm",
+		"positions": [
+			"cb",
+			"cm",
+			"cf",
+			"rw",
+			"lw"
+		],
+		"teams": [
+			[
+				"gk",
+				"lb",
+				"cb",
+				"rcb",
+				"rb",
+				"dm",
+				"cm",
+				"rcm",
+				"lw",
+				"rw",
+				"cf"
+			],
+			[
+				"gk",
+				"lb",
+				"cb",
+				"rcb",
+				"rb",
+				"lw",
+				"cm",
+				"rcm",
+				"rw",
+				"cf",
+				"st"
+			]
+		],
+		"tactic": "11v11_4-3-3",
+		"away_tactic": "11v11_4-4-2",
+		"overrides": {
+			"tuning": {
+				"goal": {
+					"height": 2.44,
+					"keeper_reach": 1.2,
+					"dive_reach": 3.0,
+					"dive_speed": 8.0
+				},
+				"steering": {
+					"shoot_range": 22.0
+				},
+				"kick": {
+					"shot_speed": 30.0,
+					"pass_speed_max": 28.0
+				},
+				"lane": {
+					"max_pass_distance": 45.0
+				},
+				"bot": {
+					"zone_mark_radius": 10.0,
+					"gk_claim_radius": 12.0,
+					"shot_post_margin": 0.8
+				},
+				"control_mode": "locked_position",
+				"visual": {
+					"stadium": {
+						"depth": 28.0,
+						"height": 18.0
+					}
+				},
+				"debug": {
+					"spectator_pos": [
+						-25.0,
+						32.0,
+						58.0
+					],
+					"spectator_target": [
+						5.0,
+						0.0,
+						0.0
+					]
+				}
+			},
+			"difficulty": {
+				"easy": {
+					"press_radius": 6.0
+				},
+				"medium": {
+					"press_radius": 10.0
+				},
+				"hard": {
+					"press_radius": 14.0
+				}
+			}
+		},
+		"scenarios": [
+			"build_from_the_back",
+			"break_the_block",
+			"press_high",
+			"defend_the_box"
+		]
 	}
 }

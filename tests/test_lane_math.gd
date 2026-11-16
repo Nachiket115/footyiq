@@ -55,3 +55,13 @@ func test_rank_options_sorted_and_excludes_passer() -> void:
 	check_eq(ranked[0].id, 3, "open forward option first")
 	check_eq(ranked[-1].id, 1, "blocked forward option ranks below the open backward one")
 	check_eq(ranked.filter(func(o: Dictionary) -> bool: return o.id == 1)[0].openness, 0.0, "blocked lane reports 0 openness")
+
+
+func test_marker_behind_the_receiver_does_not_close_the_lane() -> void:
+	var from := Vector2.ZERO
+	var to := Vector2(15.0, 0.0)
+	var behind := LaneMath.lane_openness(from, to, [Vector2(17.0, 0.0)], t)
+	var in_front := LaneMath.lane_openness(from, to, [Vector2(13.0, 0.0)], t)
+	check(behind >= 0.5, "a marker 2 m behind the receiver leaves the pass on: %.2f" % behind)
+	check_eq(in_front, 0.0, "a marker 2 m in front of the receiver cuts it out")
+	check_eq(LaneMath.lane_openness(from, to, [Vector2(15.3, 0.0)], t), 0.0, "a marker touching the receiver still closes it")

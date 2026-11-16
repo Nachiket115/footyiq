@@ -12,7 +12,7 @@ const BotController = preload("res://sim/bot_controller.gd")
 
 
 func _init() -> void:
-	var args := {"matches": "1", "seed": "1", "home": "medium", "away": "medium", "exploit": "", "baseline": ""}
+	var args := {"matches": "1", "seed": "1", "home": "medium", "away": "medium", "exploit": "", "baseline": "", "drill": ""}
 	var raw := OS.get_cmdline_user_args()
 	var problems: Array[String] = []
 	for i in range(0, raw.size(), 2):
@@ -23,6 +23,11 @@ func _init() -> void:
 		args[key] = raw[i + 1]
 	var cfg := Config.load_all("res://config")
 	problems.append_array(Config.errors)
+	if args.drill != "":
+		if cfg.get("drills", {}).has(args.drill):
+			cfg = Config.for_drill(cfg, args.drill)
+		else:
+			problems.append("unknown drill: %s" % args.drill)
 	for side in ["home", "away"]:
 		if not cfg.get("difficulty", {}).has(args[side]):
 			problems.append("unknown difficulty: %s" % args[side])
@@ -79,7 +84,7 @@ static func play(cfg: Dictionary, match_seed: int, home: String, away: String, e
 	var drill: Dictionary = cfg["drills"][t.debug.drill]
 	var sides := [
 		BotController.team(cfg, drill, home, "build_up", "mid_block"),
-		BotController.team(cfg, drill, away, "build_up", "mid_block"),
+		BotController.team(cfg, drill, away, "build_up", "mid_block", 1),
 	]
 	if exploit != "":
 		sides[0].brain = exploit_brain(exploit)

@@ -31,9 +31,9 @@ func _init(cfg: Dictionary, team_params: Array) -> void:
 		_max_delay = maxi(_max_delay, roundi(team.difficulty.reaction_time * _t.sim.tick_rate))
 
 
-static func team(cfg: Dictionary, drill: Dictionary, difficulty: String, attack: String, defend: String) -> Dictionary:
+static func team(cfg: Dictionary, drill: Dictionary, difficulty: String, attack: String, defend: String, side := 0) -> Dictionary:
 	return {
-		"roles": drill.roles,
+		"roles": drill.get("team_roles", [drill.roles, drill.roles])[side],
 		"difficulty": cfg["difficulty"][difficulty],
 		"objectives": {"attack": cfg["objectives"][attack], "defend": cfg["objectives"][defend]},
 		"brain": BotBrain,

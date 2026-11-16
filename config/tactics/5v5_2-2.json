@@ -1,0 +1,428 @@
+{
+	"formation": "2-2",
+	"style": "block",
+	"source": "A box of two defenders and two forwards: the back pair covers each other and the front pair presses the side the ball is on.",
+	"roles": {
+		"gk": {
+			"shift": [
+				0.02,
+				0.1
+			],
+			"zones": {
+				"build_up": {
+					"center": [
+						-0.466,
+						0
+					],
+					"tolerance": 5.0
+				},
+				"final_third": {
+					"center": [
+						-0.477,
+						0
+					],
+					"tolerance": 5.0
+				},
+				"defensive_transition": {
+					"center": [
+						-0.47,
+						0
+					],
+					"tolerance": 5.0
+				},
+				"press": {
+					"center": [
+						-0.477,
+						0
+					],
+					"tolerance": 5.0
+				},
+				"low_block": {
+					"center": [
+						-0.463,
+						0
+					],
+					"tolerance": 5.0
+				}
+			},
+			"structure": {
+				"mates": [
+					"cb"
+				],
+				"mate_distance": [
+					2.0,
+					26.0
+				],
+				"line_height": [
+					-52.0,
+					2.0
+				],
+				"duty_distance": 3.0
+			},
+			"triggers": [
+				{
+					"event": "possession_won",
+					"response": "offer_lane",
+					"window_s": 4.0
+				},
+				{
+					"event": "phase_enter",
+					"response": "in_zone",
+					"window_s": 3.0,
+					"phase": "build_up"
+				}
+			],
+			"duties": [
+				{
+					"event": "possession_lost",
+					"response": "in_zone",
+					"window_s": 3.0
+				}
+			]
+		},
+		"cb": {
+			"shift": [
+				0.35,
+				0.3
+			],
+			"zones": {
+				"build_up": {
+					"center": [
+						-0.27,
+						-0.2
+					],
+					"tolerance": 10.0
+				},
+				"final_third": {
+					"center": [
+						-0.115,
+						-0.18
+					],
+					"tolerance": 10.0
+				},
+				"defensive_transition": {
+					"center": [
+						-0.24,
+						-0.14
+					],
+					"tolerance": 10.0
+				},
+				"press": {
+					"center": [
+						-0.135,
+						-0.14
+					],
+					"tolerance": 10.0
+				},
+				"low_block": {
+					"center": [
+						-0.285,
+						-0.12
+					],
+					"tolerance": 10.0
+				}
+			},
+			"structure": {
+				"mates": [
+					"rcb",
+					"cf"
+				],
+				"mate_distance": [
+					2.0,
+					26.0
+				],
+				"line_height": [
+					-41.6,
+					10.4
+				],
+				"duty_distance": 3.0
+			},
+			"triggers": [
+				{
+					"event": "mate_receives",
+					"response": "offer_lane",
+					"window_s": 3.0,
+					"role": "gk"
+				},
+				{
+					"event": "possession_won",
+					"response": "offer_lane",
+					"window_s": 4.0
+				}
+			],
+			"duties": [
+				{
+					"event": "possession_lost",
+					"response": "mark",
+					"window_s": 5.0,
+					"distance": 3.0
+				},
+				{
+					"event": "carrier_near",
+					"response": "press",
+					"window_s": 3.0,
+					"radius": 5.0,
+					"distance": 2.0
+				}
+			]
+		},
+		"rcb": {
+			"shift": [
+				0.35,
+				0.3
+			],
+			"zones": {
+				"build_up": {
+					"center": [
+						-0.27,
+						0.2
+					],
+					"tolerance": 10.0
+				},
+				"final_third": {
+					"center": [
+						-0.115,
+						0.18
+					],
+					"tolerance": 10.0
+				},
+				"defensive_transition": {
+					"center": [
+						-0.24,
+						0.14
+					],
+					"tolerance": 10.0
+				},
+				"press": {
+					"center": [
+						-0.135,
+						0.14
+					],
+					"tolerance": 10.0
+				},
+				"low_block": {
+					"center": [
+						-0.285,
+						0.12
+					],
+					"tolerance": 10.0
+				}
+			},
+			"structure": {
+				"mates": [
+					"rcb",
+					"st"
+				],
+				"mate_distance": [
+					2.0,
+					26.0
+				],
+				"line_height": [
+					-41.6,
+					10.4
+				],
+				"duty_distance": 3.0
+			},
+			"triggers": [
+				{
+					"event": "mate_receives",
+					"response": "offer_lane",
+					"window_s": 3.0,
+					"role": "gk"
+				},
+				{
+					"event": "possession_won",
+					"response": "offer_lane",
+					"window_s": 4.0
+				}
+			],
+			"duties": [
+				{
+					"event": "possession_lost",
+					"response": "mark",
+					"window_s": 5.0,
+					"distance": 3.0
+				},
+				{
+					"event": "carrier_near",
+					"response": "press",
+					"window_s": 3.0,
+					"radius": 5.0,
+					"distance": 2.0
+				}
+			]
+		},
+		"cf": {
+			"shift": [
+				0.35,
+				0.3
+			],
+			"zones": {
+				"build_up": {
+					"center": [
+						0.11,
+						-0.22
+					],
+					"tolerance": 10.0
+				},
+				"final_third": {
+					"center": [
+						0.265,
+						-0.18
+					],
+					"tolerance": 10.0
+				},
+				"defensive_transition": {
+					"center": [
+						0.06,
+						-0.18
+					],
+					"tolerance": 10.0
+				},
+				"press": {
+					"center": [
+						0.184,
+						-0.16
+					],
+					"tolerance": 10.0
+				},
+				"low_block": {
+					"center": [
+						-0.025,
+						-0.14
+					],
+					"tolerance": 10.0
+				}
+			},
+			"structure": {
+				"mates": [
+					"st",
+					"cb"
+				],
+				"mate_distance": [
+					2.0,
+					26.0
+				],
+				"line_height": [
+					-15.6,
+					36.4
+				],
+				"duty_distance": 3.0
+			},
+			"triggers": [
+				{
+					"event": "mate_receives",
+					"response": "offer_lane",
+					"window_s": 3.0,
+					"role": "cb"
+				},
+				{
+					"event": "phase_enter",
+					"response": "offer_lane",
+					"window_s": 4.0,
+					"phase": "final_third"
+				}
+			],
+			"duties": [
+				{
+					"event": "possession_lost",
+					"response": "in_zone",
+					"window_s": 5.0
+				},
+				{
+					"event": "carrier_near",
+					"response": "press",
+					"window_s": 3.0,
+					"radius": 5.0,
+					"distance": 2.0
+				}
+			]
+		},
+		"st": {
+			"shift": [
+				0.35,
+				0.3
+			],
+			"zones": {
+				"build_up": {
+					"center": [
+						0.11,
+						0.22
+					],
+					"tolerance": 10.0
+				},
+				"final_third": {
+					"center": [
+						0.265,
+						0.18
+					],
+					"tolerance": 10.0
+				},
+				"defensive_transition": {
+					"center": [
+						0.06,
+						0.18
+					],
+					"tolerance": 10.0
+				},
+				"press": {
+					"center": [
+						0.184,
+						0.16
+					],
+					"tolerance": 10.0
+				},
+				"low_block": {
+					"center": [
+						-0.025,
+						0.14
+					],
+					"tolerance": 10.0
+				}
+			},
+			"structure": {
+				"mates": [
+					"st",
+					"rcb"
+				],
+				"mate_distance": [
+					2.0,
+					26.0
+				],
+				"line_height": [
+					-15.6,
+					36.4
+				],
+				"duty_distance": 3.0
+			},
+			"triggers": [
+				{
+					"event": "mate_receives",
+					"response": "offer_lane",
+					"window_s": 3.0,
+					"role": "rcb"
+				},
+				{
+					"event": "phase_enter",
+					"response": "offer_lane",
+					"window_s": 4.0,
+					"phase": "final_third"
+				}
+			],
+			"duties": [
+				{
+					"event": "possession_lost",
+					"response": "in_zone",
+					"window_s": 5.0
+				},
+				{
+					"event": "carrier_near",
+					"response": "press",
+					"window_s": 3.0,
+					"radius": 5.0,
+					"distance": 2.0
+				}
+			]
+		}
+	}
+}

@@ -4,6 +4,9 @@ const Config = preload("res://core/config.gd")
 const WorldState = preload("res://core/world_state.gd")
 const Sim = preload("res://core/sim.gd")
 const BallControl = preload("res://core/ball_control.gd")
+const PitchSnapshot = preload("res://core/pitch_snapshot.gd")
+const Scenario = preload("res://core/scenario.gd")
+const Tactic = preload("res://core/tactic.gd")
 const Roles = preload("res://bots/roles.gd")
 const BotController = preload("res://sim/bot_controller.gd")
 const InputMapper = preload("res://sim/input_mapper.gd")
@@ -43,6 +46,12 @@ var _drill: Dictionary
 var _hud: Hud
 var _sounds: Sounds
 var _banner_until_ms := 0
+var _banner := "GOAL"
+var _scenarios: Array = []
+var _scenario_index := -1
+var _scenario_tick := 0
+var _frames := []
+var _last_scenario := -1
 
 
 func _ready() -> void:
@@ -54,6 +63,7 @@ func _ready() -> void:
 		set_process(false)
 		set_physics_process(false)
 		return
+	cfg = Config.for_drill(cfg, cfg["tuning"].play.drill)
 	var t: Dictionary = cfg["tuning"]
 	Engine.physics_ticks_per_second = int(t.sim.tick_rate)
 	_eye_height = t.player.eye_height
@@ -67,7 +77,7 @@ func _ready() -> void:
 			controlled_id = p.id
 	var sides := []
 	for side: Dictionary in t.debug.teams:
-		sides.append(BotController.team(cfg, drill, side.difficulty, side.attack, side.defend))
+		sides.append(BotController.team(cfg, drill, side.difficulty, side.attack, side.defend, sides.size()))
 	_bots = BotController.new(cfg, sides)
 	_bots.human_id = controlled_id
 
@@ -96,6 +106,9 @@ func _ready() -> void:
 	add_child(_sounds)
 	_controller.cam_yaw = state.player_by_id(controlled_id).body_yaw
 	_set_view(t.camera.view)
+	if t.play.scenarios:
+		_scenarios = drill.get("scenarios", [])
+	_next_scenario()
 	_remember()
 
 
@@ -103,6 +116,8 @@ func _physics_process(_delta: float) -> void:
 	_remember()
 	if Time.get_ticks_msec() < _paused_until_ms:
 		return
+	if _scenario_index == -1:
+		_next_scenario()
 	var input := _mapper.poll()
 	var owner := state.player_by_id(state.ball.owner_id)
 	input.tackle = input.trap and owner != null and owner.team != state.player_by_id(controlled_id).team
@@ -113,7 +128,7 @@ func _physics_process(_delta: float) -> void:
 	_controller.sync(state.player_by_id(controlled_id).head_yaw)
 	var t: Dictionary = cfg["tuning"]
 	var settled: bool = state.tick - _switch_tick >= t.switch.defend_cooldown_s * t.sim.tick_rate
-	if input.switch:
+	if input.switch and t.control_mode != "locked_position":
 		set_control(BallControl.switch_target(state, controlled_id))
 	else:
 		set_control(BallControl.control_after(state, controlled_id, t.control_mode != "locked_position", settled, t.control_mode == "follow_ball"))
@@ -122,8 +137,14 @@ func _physics_process(_delta: float) -> void:
 	for event in state.events:
 		if event.type == "pass" or event.type == "shot":
 			_sounds.play("kick")
-		elif event.type == "goal":
+		elif event.type == "goal" and _scenarios.is_empty():
 			_kickoff()
+	if not _scenarios.is_empty():
+		if state.tick % int(t.headless.frame_ticks) == 0:
+			_frames.append(PitchSnapshot.from_world(state, t.sim.tick_rate))
+		var result := Scenario.outcome(_scenario(), state, (state.tick - _scenario_tick) / t.sim.tick_rate)
+		if result != "":
+			_finish_scenario(result)
 	if not state.events.is_empty():
 		_prev_ball = state.ball.pos
 
@@ -152,6 +173,14 @@ func set_control(id: int) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	var positions: Array = _drill.get("positions", [])
+	for i in positions.size():
+		if event.is_action_pressed("position_%d" % (i + 1)):
+			for p in state.players:
+				if p.team == state.player_by_id(controlled_id).team and p.role == positions[i]:
+					set_control(p.id)
+	if event.is_action_pressed("next_scenario") and not _scenarios.is_empty():
+		_scenario_index = -1
 	if event.is_action_pressed("debug_camera"):
 		_set_view(VIEWS[(VIEWS.find(_view) + 1) % VIEWS.size()])
 
@@ -195,6 +224,43 @@ func _set_view(view: String) -> void:
 	_body_indicator.visible = view == "first" and cfg["tuning"].hud.body_indicator.enabled
 
 
+func _scenario() -> Dictionary:
+	return cfg["scenarios"][_scenarios[_scenario_index]]
+
+
+func _next_scenario() -> void:
+	if _scenarios.is_empty():
+		_scenario_index = 0
+		return
+	var t: Dictionary = cfg["tuning"]
+	_scenario_index = (_last_scenario + 1) % _scenarios.size()
+	_last_scenario = _scenario_index
+	var s := _scenario()
+	Roles.arrange(state, _drill, Vector2(s.ball[0] * state.pitch.length, s.ball[1] * state.pitch.width), s.team, t)
+	var sides := []
+	for side: Dictionary in t.debug.teams:
+		var plan: Dictionary = s.objectives[sides.size()]
+		sides.append(BotController.team(cfg, _drill, side.difficulty, plan.attack, plan.defend, sides.size()))
+	_bots = BotController.new(cfg, sides)
+	_bots.human_id = controlled_id
+	_frames.clear()
+	_scenario_tick = state.tick
+	_hud.lines = []
+	_sounds.play("whistle")
+	_remember()
+
+
+func _finish_scenario(result: String) -> void:
+	var t: Dictionary = cfg["tuning"]
+	var me := state.player_by_id(controlled_id)
+	var score := Tactic.score_role(_frames, _drill.team_roles[me.team][me.role], {"player_id": controlled_id, "tuning": t})
+	_banner = result.to_upper()
+	_hud.lines = Scenario.summary(score, _scenario_tick / t.sim.tick_rate)
+	_banner_until_ms = Time.get_ticks_msec() + int(t.play.result_s * 1000.0)
+	_paused_until_ms = _banner_until_ms
+	_scenario_index = -1
+
+
 func _kickoff() -> void:
 	var t: Dictionary = cfg["tuning"]
 	var fresh := Roles.spawn(_drill, t)
@@ -203,6 +269,7 @@ func _kickoff() -> void:
 		p.vel = Vector2.ZERO
 		p.body_yaw = fresh.players[p.id].body_yaw
 	_sounds.play("whistle")
+	_banner = "GOAL"
 	_banner_until_ms = Time.get_ticks_msec() + int(t.hud.match.banner_s * 1000.0)
 	_paused_until_ms = _banner_until_ms
 
@@ -211,12 +278,21 @@ func _update_hud(f: float) -> void:
 	var t: Dictionary = cfg["tuning"]
 	_hud.score = state.score
 	_hud.seconds = state.tick / t.sim.tick_rate
+	var task := ""
+	if not _scenarios.is_empty() and _scenario_index != -1:
+		_hud.seconds = maxf(0.0, _scenario().time_s - (state.tick - _scenario_tick) / t.sim.tick_rate)
+		task = "%s: %s" % [_scenario().title, _scenario().goal]
 	_hud.charge = _controller.charge
-	_hud.banner = "GOAL" if Time.get_ticks_msec() < _banner_until_ms else ""
+	var keys := []
+	for i in _drill.get("positions", []).size():
+		keys.append("%d %s" % [i + 1, _drill.positions[i].to_upper()])
+	_hud.info = "You: %s     %s" % [state.player_by_id(controlled_id).role.to_upper(), "   ".join(keys)]
+	_hud.task = task
+	_hud.banner = _banner if Time.get_ticks_msec() < _banner_until_ms else ""
 	var marked := {controlled_id: "you_color"}
 	if state.ball.owner_id == controlled_id:
 		marked[_controller.receiver(state, controlled_id, _controller.charge if _controller.charge > 0.0 else 1.0)] = "pass_color"
-	else:
+	elif t.control_mode != "locked_position":
 		marked[BallControl.switch_target(state, controlled_id)] = "switch_color"
 	_hud.markers.clear()
 	var camera := get_viewport().get_camera_3d()

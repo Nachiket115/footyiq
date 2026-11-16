@@ -27,6 +27,7 @@ godot --headless --path . -s tools/headless_match.gd -- --matches 20 --seed 1 --
 | `--matches N` | 1 | Number of matches; match *i* uses seed `S + i` |
 | `--seed S` | 1 | First seed |
 | `--home`, `--away` | `medium` | Difficulty from `config/difficulty.json`: `easy`, `medium`, `hard` |
+| `--drill NAME` | `5v5` | Drill from `config/drills.json`: `5v5`, `5v5_2-2`, `7v7`, `11v11`. Sets the pitch, both teams' tactics and that drill's tuning overrides |
 | `--exploit` | none | Replace the home team's carrier with a scripted trick: `always_back` (always pass to the deepest teammate) or `wing_dribble` (run down one wing and shoot) |
 | `--baseline ROLE` | none | Play one match with seed `S` and print the role execution score of the home team's bot in that role (`gk`, `cb`, `lm`, `rm`, `st`) instead of the match totals |
 

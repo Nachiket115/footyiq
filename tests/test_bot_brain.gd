@@ -260,3 +260,17 @@ func test_defender_keeps_its_zone_when_the_attacker_is_elsewhere() -> void:
 	var zone := Roles.anchor(drill.roles.cb, snap, 1)
 	var end := _follow(snap, 3, 5.0)
 	check(end.distance_to(zone) < 2.0, "stays in its zone: %s, zone %s" % [end, zone])
+
+
+func test_teammate_makes_its_run_when_the_trigger_player_has_the_ball() -> void:
+	var players := [
+		[0, "st", Vector2(4.0, 0.0)],
+		[0, "rm", Vector2(-2.0, 7.0)],
+		[0, "cb", Vector2(-8.0, 0.0)],
+		[1, "cb", Vector2(12.0, 0.0)],
+	]
+	var fed := _snap(players, Vector2(4.6, 0.0), 0)
+	var idle := _snap(players, Vector2(-7.4, 0.0), 2)
+	var run := _decide(fed, 1).desired_velocity
+	check(run.x > t.player.jog_speed, "the wide player sprints forward when the striker receives: %s" % run)
+	check(run.x > _decide(idle, 1).desired_velocity.x + 1.0, "and not when the centre-back has it")
