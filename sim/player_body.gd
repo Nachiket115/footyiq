@@ -26,6 +26,9 @@ class HeadLook extends SkeletonModifier3D:
 
 
 var _anim := AnimationPlayer.new()
+var _pivot := Node3D.new()
+var _dive: Dictionary
+var _diving: Tween
 var _look := HeadLook.new()
 var _last_pos := Vector2.ZERO
 var _last_usec := 0
@@ -45,7 +48,9 @@ func _init(player: WorldState.PlayerState, t: Dictionary) -> void:
 	var model: Node3D = load(m.scene).instantiate()
 	model.rotation.y = PI
 	model.scale = Vector3.ONE * (t.player.height / m.model_height)
-	add_child(model)
+	add_child(_pivot)
+	_pivot.add_child(model)
+	_dive = t.visual.dive
 	model.add_child(_anim)
 	_anim.add_animation_library("", _library)
 
@@ -81,6 +86,31 @@ func sync(pos: Vector2, body_yaw: float, head_yaw: float, head_pitch: float) -> 
 	rotation.y = -body_yaw - PI * 0.5
 	_look.yaw = head_yaw
 	_look.pitch = head_pitch
+
+
+static func dive_side(player: WorldState.PlayerState, ball: WorldState.BallState, t: Dictionary) -> float:
+	var vel := Vector2(ball.vel.x, ball.vel.z)
+	if player.role != "gk" or ball.owner_id != -1 or vel.length() <= t.control.max_ball_speed * t.control.trap_speed_factor:
+		return 0.0
+	var at := Vector2(ball.pos.x, ball.pos.z)
+	var along := (player.pos - at).dot(vel.normalized())
+	if along < 0.0 or along > t.visual.dive.trigger_distance:
+		return 0.0
+	var miss := at + vel.normalized() * along - player.pos
+	if miss.length() < t.player.radius or miss.length() > t.goal.dive_reach + t.ball.radius:
+		return 0.0
+	return signf(miss.dot(Vector2.from_angle(player.body_yaw + PI * 0.5)))
+
+
+func dive(side: float) -> void:
+	if side == 0.0 or (_diving != null and _diving.is_running()):
+		return
+	_diving = create_tween()
+	_diving.tween_property(_pivot, "position:x", side * _dive.slide, _dive.in_s)
+	_diving.parallel().tween_property(_pivot, "rotation:z", -side * deg_to_rad(_dive.lean_deg), _dive.in_s)
+	_diving.tween_interval(_dive.hold_s)
+	_diving.tween_property(_pivot, "position:x", 0.0, _dive.out_s)
+	_diving.parallel().tween_property(_pivot, "rotation:z", 0.0, _dive.out_s)
 
 
 func _animate(forward_speed: float) -> void:

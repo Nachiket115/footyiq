@@ -71,7 +71,9 @@ func _decide() -> Intent:
 	if me.role == "gk":
 		var line := Roles.anchor(role, snap, me.team)
 		var post: float = snap.pitch.goal_width * 0.5
-		return _go(Vector2(line.x, clampf(snap.ball_pos.y, -post, post)), sprint, Action.TRAP)
+		var out: Vector2 = snap.ball_pos - own_goal
+		var along := clampf((line.x - own_goal.x) / out.x, 0.0, 1.0) if out.x != 0.0 else 1.0
+		return _go(Vector2(line.x, clampf(out.y * along, -post, post)), sprint, Action.TRAP)
 	return _support() if holder.team == me.team else _defend()
 
 
@@ -152,6 +154,8 @@ func _on_ball() -> Intent:
 		var aim := _shot_aim()
 		var fast := {"lane": t.lane.duplicate()}
 		fast.lane.pass_speed = t.kick.shot_speed
+		fast.lane.reach_radius = b.shot_block_radius
+		fast.lane.margin = b.shot_block_margin
 		var open := LaneMath.lane_openness(me.pos, aim, _outfield(opps).map(func(o: Dictionary) -> Vector2: return o.pos), fast)
 		var value := _noisy(w.shoot * open * (1.0 - b.shot_distance_falloff * dist / reach))
 		if value > best_value:
@@ -159,7 +163,7 @@ func _on_ball() -> Intent:
 			best = Intent.new()
 			best.action = Action.SHOOT
 			best.power = 1.0
-			best.desired_facing = (aim - me.pos).angle()
+			best.desired_facing = (aim - snap.ball_pos).angle()
 
 	var half := Vector2(snap.pitch.length, snap.pitch.width) * 0.5
 	var here := LaneMath.space_score(me.pos, opp_pos, t)
@@ -229,32 +233,29 @@ func _support() -> Intent:
 
 
 func _defend() -> Intent:
-	var pressing := false
-	var free: Array[Dictionary] = []
-	for defender in _outfield(mates + [me]):
-		if defender.pos.distance_to(ball_at) < diff.press_radius * objective.press_scale:
-			pressing = true
-			if defender.id == me.id:
-				return _press()
-		else:
-			free.append(defender)
+	var presser := me
+	for defender in _outfield(mates):
+		if defender.pos.distance_to(ball_at) < presser.pos.distance_to(ball_at):
+			presser = defender
+	if presser.id == me.id:
+		if me.pos.distance_to(ball_at) < diff.press_radius * objective.press_scale:
+			return _press()
+		if holder.role != "gk":
+			return _mark(holder)
 
-	var threats := _outfield(opps).filter(func(o: Dictionary) -> bool: return o.id != holder.id)
-	threats.sort_custom(func(x: Dictionary, y: Dictionary) -> bool:
-		return x.pos.distance_to(own_goal) < y.pos.distance_to(own_goal))
-	if not pressing and holder.role != "gk":
-		threats.push_front(holder)
-	for threat in threats:
-		if free.is_empty():
-			break
-		var marker: Dictionary = free[0]
-		for defender in free:
-			if defender.pos.distance_to(threat.pos) < marker.pos.distance_to(threat.pos):
-				marker = defender
-		free.erase(marker)
-		if marker.id == me.id:
-			return _mark(threat)
-	return _hurry(_anchor())
+	var anchor := _anchor()
+	var threat := {}
+	var nearest: float = b.zone_mark_radius
+	for opp in _outfield(opps):
+		var gap: float = opp.pos.distance_to(anchor)
+		if gap < nearest:
+			nearest = gap
+			threat = opp
+		if opp.id == holder.id and gap < b.zone_mark_radius:
+			return _press() if me.pos.distance_to(ball_at) < diff.press_radius * objective.press_scale else _mark(holder)
+	if threat.is_empty():
+		return _hurry(anchor)
+	return _hurry(anchor.lerp(_mark_spot(threat), clampf((b.zone_mark_radius - nearest) / b.zone_mark_blend, 0.0, 1.0)))
 
 
 func _anchor() -> Vector2:
@@ -267,15 +268,21 @@ func _press() -> Intent:
 	if snap.owner_id == -1:
 		return _collect()
 	var in_reach: bool = me.pos.distance_to(snap.ball_pos) < t.tackle.radius * b.tackle_reach
-	return _go(snap.ball_pos, sprint, Action.TACKLE if in_reach else Action.NONE)
+	var chase := _go(snap.ball_pos, sprint, Action.TACKLE if in_reach else Action.NONE)
+	chase.desired_velocity = Steering.seek(me.pos, snap.ball_pos, sprint)
+	return chase
 
 
 func _mark(threat: Dictionary) -> Intent:
+	return _hurry(_mark_spot(threat))
+
+
+func _mark_spot(threat: Dictionary) -> Vector2:
 	var to_goal: Vector2 = (own_goal - threat.pos).normalized()
 	if threat.id == holder.id:
-		return _hurry(threat.pos + to_goal * b.contain_distance)
+		return threat.pos + to_goal * b.contain_distance
 	var to_ball: Vector2 = (ball_at - threat.pos).normalized()
-	return _hurry(threat.pos + (to_goal + to_ball * diff.lane_cover).normalized() * b.mark_distance)
+	return threat.pos + (to_goal + to_ball * diff.lane_cover).normalized() * b.mark_distance
 
 
 func _hurry(target: Vector2) -> Intent:

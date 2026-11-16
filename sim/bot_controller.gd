@@ -51,6 +51,7 @@ func commands(state: WorldState) -> Array:
 	var result := []
 	for player in state.players:
 		if player.id == human_id:
+			_intents.erase(player.id)
 			continue
 		if not _intents.has(player.id) or (state.tick + player.id % int(_b.stagger_ticks)) % every == 0:
 			var side: Dictionary = _teams[player.team]

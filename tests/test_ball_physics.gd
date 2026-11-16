@@ -152,3 +152,34 @@ func test_over_the_bar_or_wide_is_out_not_goal() -> void:
 	check_eq(events[0].type, "out", "over the bar")
 	events = _run(_ball(Vector3(19.0, r, 3.0), Vector3(10.0, 0.0, 0.0)), 1.0, PITCH)
 	check_eq(events[0].type, "out", "wide of the post")
+
+
+func test_keeper_parries_a_fast_shot_within_reach_but_not_a_slow_ball() -> void:
+	var keeper := WorldState.PlayerState.new()
+	keeper.role = "gk"
+	keeper.pos = Vector2(5.0, 0.0)
+	var pitch := {"length": 200.0, "width": 200.0, "goal_width": 0.0, "boards": true}
+	for case: Array in [[25.0, true], [8.0, false]]:
+		var ball := WorldState.BallState.new()
+		ball.pos = Vector3(0.0, t.ball.radius, t.goal.keeper_reach - 0.2)
+		ball.vel = Vector3(case[0], 0.0, 0.0)
+		for i in 60:
+			BallPhysics.integrate(ball, [keeper], 1.0 / 60.0, pitch, t)
+		check_eq(ball.pos.z > t.goal.keeper_reach, case[1], "ball at %.0f m/s ends at z %.2f" % [case[0], ball.pos.z])
+
+
+func test_keeper_dives_further_the_longer_a_shot_has_been_in_flight() -> void:
+	var keeper := WorldState.PlayerState.new()
+	keeper.role = "gk"
+	keeper.pos = Vector2(1.0, 0.0)
+	var pitch := {"length": 200.0, "width": 200.0, "goal_width": 0.0, "boards": true}
+	var wide: float = t.goal.keeper_reach + t.ball.radius + 0.3
+	for case: Array in [[0.0, false], [1.0, true]]:
+		var ball := WorldState.BallState.new()
+		ball.pos = Vector3(0.0, t.ball.radius, wide)
+		ball.vel = Vector3(25.0, 0.0, 0.0)
+		ball.flight = case[0]
+		for i in 6:
+			BallPhysics.integrate(ball, [keeper], 1.0 / 60.0, pitch, t)
+		check_eq(ball.pos.z > wide + 0.05, case[1], "after %.1f s of flight the ball ends at z %.2f" % [case[0], ball.pos.z])
+	check(t.goal.dive_reach < PITCH.goal_width * 0.5, "a full dive still leaves the corners")

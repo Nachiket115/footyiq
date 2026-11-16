@@ -30,6 +30,7 @@ static func step(state: WorldState, commands: Array, cfg: Dictionary) -> WorldSt
 	PlayerMotion.separate(state.players, t.player.radius)
 	for player in state.players:
 		player.pos = player.pos.clamp(-limit, limit)
+		_keep_out_of_goal(player, state.pitch, t)
 
 	var rng := RandomNumberGenerator.new()
 	rng.state = int(state.rng_state)
@@ -47,6 +48,18 @@ static func step(state: WorldState, commands: Array, cfg: Dictionary) -> WorldSt
 			var reach_z: float = state.pitch.width * 0.5 - t.sim.restart_inset
 			_place_ball(state.ball, Vector3(clampf(event.pos.x, -reach_x, reach_x), event.pos.y, clampf(event.pos.z, -reach_z, reach_z)))
 	return state
+
+
+static func _keep_out_of_goal(player: WorldState.PlayerState, pitch: Dictionary, t: Dictionary) -> void:
+	var half_goal: float = pitch.get("goal_width", 0.0) * 0.5
+	var past: float = absf(player.pos.x) - pitch.length * 0.5
+	var inside: float = half_goal + t.player.radius - absf(player.pos.y)
+	if half_goal <= 0.0 or past <= 0.0 or inside <= 0.0 or past >= t.goal.depth + t.player.radius:
+		return
+	if past < inside:
+		player.pos.x = signf(player.pos.x) * pitch.length * 0.5
+	else:
+		player.pos.y = (1.0 if player.pos.y >= 0.0 else -1.0) * (half_goal + t.player.radius)
 
 
 static func _idle(player: WorldState.PlayerState) -> PlayerCommand:

@@ -24,6 +24,11 @@
 		"substep_travel_factor": 0.5
 	},
 	"goal": {
+		"keeper_reach": 0.7,
+		"dive_reach": 1.3,
+		"dive_speed": 4.0,
+		"dive_delay_s": 0.2,
+		"depth": 1.2,
 		"post_radius": 0.05,
 		"height": 2.0
 	},
@@ -79,8 +84,21 @@
 		"pass_speed_min": 8.0,
 		"pass_speed_max": 22.0,
 		"shot_speed": 25.0,
+		"shot_power_min": 0.5,
 		"loft_angle_deg": 20.0,
 		"charge_time": 0.8
+	},
+	"pass": {
+		"max_offbody_error_deg": 12.0,
+		"receiver_tolerance": 3.0
+	},
+	"control_mode": "on_pass",
+	"switch_mode": "pause",
+	"switch": {
+		"pause_s": 0.8,
+		"blend_s": 0.4,
+		"defend_cooldown_s": 2.0,
+		"slowmo_scale": 0.4
 	},
 	"steering": {
 		"arrive_radius": 3.0,
@@ -91,9 +109,9 @@
 		"turn_gain": 4.0,
 		"turn_deadband_deg": 2.0,
 		"stand_turn_deg": 45.0,
-		"smooth_s": 0.2,
+		"smooth_s": 0.3,
 		"shoot_range": 12.0,
-		"max_flips": 2.0
+		"max_flips": 2.5
 	},
 	"tackle": {
 		"radius": 0.9,
@@ -109,14 +127,18 @@
 		"pass_speed_base": 7.0,
 		"pass_speed_per_m": 0.6,
 		"kick_cone_deg": 60.0,
-		"shot_post_margin": 0.5,
-		"shot_distance_falloff": 0.5,
+		"shot_block_radius": 0.6,
+		"shot_block_margin": 0.6,
+		"shot_post_margin": 0.3,
+		"shot_distance_falloff": 0.7,
 		"dribble_angles_deg": [-60.0, -30.0, 0.0, 30.0, 60.0],
 		"dribble_probe": 4.0,
 		"dribble_sprint": 0.4,
 		"support_radius": 8.0,
 		"support_points": 8,
 		"spacing_radius": 8.0,
+		"zone_mark_radius": 6.0,
+		"zone_mark_blend": 1.0,
 		"mark_distance": 1.5,
 		"contain_distance": 3.0,
 		"hurry_distance": 6.0,
@@ -155,6 +177,14 @@
 		}
 	},
 	"visual": {
+		"dive": {
+			"trigger_distance": 4.0,
+			"slide": 0.8,
+			"lean_deg": 70.0,
+			"in_s": 0.15,
+			"hold_s": 0.6,
+			"out_s": 0.5
+		},
 		"mow_stripe_width": 2.5,
 		"pitch_margin": 30.0,
 		"line_color": "#f2f2f2",
@@ -162,7 +192,6 @@
 		"line_height": 0.01,
 		"centre_circle_radius": 3.0,
 		"goal_color": "#ffffff",
-		"net_depth": 1.2,
 		"net_spacing": 0.12,
 		"ball_color": "#f4f4f2",
 		"team_colors": [
@@ -346,9 +375,45 @@
 		"near": 0.05,
 		"look_sensitivity_deg": 0.12,
 		"stick_speed_deg": 180.0,
-		"look_smoothing_s": 0.0
+		"look_smoothing_s": 0.0,
+		"view": "first",
+		"chase": {
+			"back": 5.5,
+			"lift": 0.6,
+			"fov_deg": 80.0,
+			"pitch_deg": -18.0,
+			"pitch_min_deg": -55.0,
+			"pitch_max_deg": 0.0
+		}
+	},
+	"assist": {
+		"stick_deadzone": 0.2,
+		"shot_cone_deg": 45.0,
+		"post_margin": 0.4
+	},
+	"audio": {
+		"mix_rate": 22050,
+		"kick": {"seconds": 0.12, "tone_hz": 90.0, "brightness": 0.3, "volume_db": -6.0},
+		"whistle": {"seconds": 0.6, "tone_hz": 2800.0, "trill_hz": 35.0, "trill_depth": 0.6, "volume_db": -14.0},
+		"crowd": {"seconds": 4.0, "brightness": 0.08, "volume_db": -20.0}
 	},
 	"hud": {
+		"match": {
+			"font_size": 28,
+			"banner_size": 96,
+			"banner_s": 2.0,
+			"margin": 24.0,
+			"bar_width": 240.0,
+			"bar_height": 14.0,
+			"bar_bottom": 80.0,
+			"marker_size": 12.0,
+			"marker_lift": 0.45,
+			"text_color": "#ffffff",
+			"shade_color": "#00000099",
+			"you_color": "#ffd23f",
+			"pass_color": "#4ade80",
+			"switch_color": "#ffffff88"
+		},
 		"body_indicator": {
 			"enabled": true,
 			"track_width_frac": 0.3,

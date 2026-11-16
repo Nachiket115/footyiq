@@ -40,13 +40,17 @@
 		"key:F",
 		"joy_button:2"
 	],
-	"lofted": [
+	"lob": [
 		"key:Space",
 		"joy_button:9"
 	],
 	"trap": [
 		"key:E",
 		"joy_button:10"
+	],
+	"switch_player": [
+		"key:Tab",
+		"joy_button:4"
 	],
 	"release_mouse": [
 		"key:Escape"

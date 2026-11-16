@@ -114,6 +114,8 @@ func test_defender_presses_inside_trigger_radius() -> void:
 	check(absf(intent.desired_velocity.angle_to(to_ball)) < 0.05, "runs at the ball")
 	check(intent.desired_velocity.length() > t.player.jog_speed, "at a sprint")
 	check_eq(intent.action, Action.NONE, "no tackle from out of reach")
+	snap.players[2].pos = Vector2(1.9, 0.0)
+	check(_decide(snap, 2).desired_velocity.length() > t.player.jog_speed, "does not ease off as it closes in")
 	snap.players[2].pos = Vector2(1.4, 0.0)
 	check_eq(_decide(snap, 2).action, Action.TACKLE, "tackles in reach")
 
@@ -169,16 +171,18 @@ func test_perception_noise_grows_with_distance() -> void:
 	check(near_error < far_error, "near %s, far %s" % [near_error, far_error])
 
 
-func test_gk_tracks_ball_along_goal_line() -> void:
+func test_gk_stands_between_the_ball_and_the_goal_centre() -> void:
 	var snap := _snap([
 		[0, "gk", Vector2(-18.8, 0.0)],
-		[1, "st", Vector2(0.0, 1.2)],
-	], Vector2(-0.6, 1.2), 1)
+		[1, "st", Vector2(-10.0, 6.0)],
+	], Vector2(-10.0, 6.0), 1)
 	check(_decide(snap, 0).desired_velocity.y > 0.0, "moves toward the ball's side")
 	var end := _follow(snap, 0, 4.0)
-	check_near(end.y, 1.2, 0.2, "level with the ball")
-	check_near(end.x, -18.8, 0.3, "still on its line")
-	snap.ball_pos = Vector2(-0.6, 10.0)
+	var goal := Vector2(-snap.pitch.length * 0.5, 0.0)
+	var off_line: float = absf((snap.ball_pos - goal).normalized().cross(end - goal))
+	check(off_line < 0.2, "on the line from the ball to the goal centre, off by %.2f" % off_line)
+	check(end.x < -18.0, "still near its line: %s" % end)
+	snap.ball_pos = Vector2(-19.5, 10.0)
 	check_near(_follow(snap, 0, 4.0).y, snap.pitch.goal_width * 0.5, 0.2, "never past the post")
 
 
@@ -232,3 +236,27 @@ func test_objective_shifts_the_line() -> void:
 			snap.players[2].pos += BotBrain.decide(snap, drill.roles["cb"], params).desired_velocity * t.bot.decide_interval
 		lines[name] = snap.players[2].pos.x
 	check(lines.press_high < lines.mid_block and lines.mid_block < lines.low_block, "team 1 lines by objective: %s" % lines)
+
+
+func test_only_the_nearest_defender_presses() -> void:
+	var snap := _snap([
+		[0, "cb", Vector2(0.0, 0.0)],
+		[1, "st", Vector2(3.0, 0.0)],
+		[1, "lm", Vector2(2.5, 3.0)],
+	], Vector2(0.6, 0.0), 0)
+	var to_ball: Vector2 = snap.ball_pos - snap.players[1].pos
+	check(absf(_decide(snap, 1).desired_velocity.angle_to(to_ball)) < 0.05, "nearest one goes to the ball")
+	var end := _follow(snap, 2, 4.0)
+	check(end.distance_to(snap.ball_pos) > cfg["difficulty"].medium.press_radius, "the other leaves it to him: %s" % end)
+
+
+func test_defender_keeps_its_zone_when_the_attacker_is_elsewhere() -> void:
+	var snap := _snap([
+		[0, "cb", Vector2(0.0, 0.0)],
+		[0, "st", Vector2(2.0, -11.0)],
+		[1, "st", Vector2(3.0, 0.0)],
+		[1, "cb", Vector2(13.0, 0.0)],
+	], Vector2(0.6, 0.0), 0)
+	var zone := Roles.anchor(drill.roles.cb, snap, 1)
+	var end := _follow(snap, 3, 5.0)
+	check(end.distance_to(zone) < 2.0, "stays in its zone: %s, zone %s" % [end, zone])

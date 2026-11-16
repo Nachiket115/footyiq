@@ -6,6 +6,7 @@ const EPS := 1e-4
 
 
 static func integrate(ball: WorldState.BallState, players: Array, dt: float, pitch: Dictionary, t: Dictionary) -> Array[Dictionary]:
+	ball.flight += dt
 	var events: Array[Dictionary] = []
 	var max_travel: float = t.ball.radius * t.ball.substep_travel_factor
 	var steps := maxi(int(t.ball.min_substeps), ceili(ball.vel.length() * dt / max_travel))
@@ -55,7 +56,9 @@ static func _substep(ball: WorldState.BallState, players: Array, h: float, pitch
 	for player: WorldState.PlayerState in players:
 		if player.id != ball.owner_id and ball.pos.y - r < t.player.height:
 			var surface_vel := Vector3(player.vel.x, 0.0, player.vel.y)
-			_hit(ball, player.pos, true, r + t.player.radius, b.player_restitution, surface_vel)
+			var saving: bool = player.role == "gk" and ball.vel.length() > t.control.max_ball_speed * t.control.trap_speed_factor
+			var dive := clampf(t.goal.keeper_reach + t.goal.dive_speed * (ball.flight - t.goal.dive_delay_s), t.goal.keeper_reach, t.goal.dive_reach)
+			_hit(ball, player.pos, true, r + (dive if saving else t.player.radius), b.player_restitution, surface_vel)
 
 	var in_mouth := absf(ball.pos.z) < half_goal and ball.pos.y < goal_h
 	if in_mouth and absf(ball.pos.x) > half_l + r:

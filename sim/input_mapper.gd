@@ -49,11 +49,14 @@ func poll() -> Dictionary:
 		"move": Vector2(Input.get_axis("move_left", "move_right"), Input.get_axis("move_back", "move_forward")),
 		"sprint": Input.is_action_pressed("sprint"),
 		"align": Input.is_action_pressed("align"),
-		"shoot": Input.is_action_just_pressed("shoot"),
-		"lofted": Input.is_action_pressed("lofted"),
 		"pass_held": Input.is_action_pressed("pass"),
 		"pass_released": Input.is_action_just_released("pass"),
+		"lob_held": Input.is_action_pressed("lob"),
+		"lob_released": Input.is_action_just_released("lob"),
+		"shoot_held": Input.is_action_pressed("shoot"),
+		"shoot_released": Input.is_action_just_released("shoot"),
 		"trap": Input.is_action_pressed("trap"),
+		"switch": Input.is_action_just_pressed("switch_player"),
 	}
 
 

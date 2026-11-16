@@ -5,6 +5,10 @@ func set_pose(_eye: Vector3, _yaw: float, _pitch: float) -> void:
 	pass
 
 
+func blend_to(_eye: Vector3, _yaw: float, _pitch: float, _seconds: float) -> void:
+	pass
+
+
 func set_fov(_degrees: float) -> void:
 	pass
 

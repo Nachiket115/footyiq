@@ -47,7 +47,7 @@ func _add_goal(side: float, goal_x: float, goal_w: float, t: Dictionary) -> void
 	var v: Dictionary = t.visual
 	var goal_h: float = t.goal.height
 	var radius: float = t.goal.post_radius
-	var depth: float = v.net_depth
+	var depth: float = t.goal.depth
 	var frame := Meshes.flat(v.goal_color, 0.4)
 	for post_side in [-1.0, 1.0]:
 		Meshes.add(self, Meshes.cylinder(radius, goal_h), frame, Vector3(goal_x, goal_h * 0.5, post_side * goal_w * 0.5))

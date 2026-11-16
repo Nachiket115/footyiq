@@ -70,3 +70,29 @@ func test_kick_out_of_reach_does_nothing() -> void:
 	state.ball.pos.x = 5.0
 	Sim.step(state, _commands(1), cfg)
 	check_eq(state.ball.vel, Vector3.ZERO, "ball not kicked")
+
+
+func test_player_cannot_run_through_the_goal() -> void:
+	var state := WorldState.new()
+	state.pitch = cfg["drills"]["5v5"].pitch
+	var runner := WorldState.PlayerState.new()
+	runner.pos = Vector2(state.pitch.length * 0.5 - 2.0, 0.5)
+	state.players.append(runner)
+	var side := WorldState.PlayerState.new()
+	side.id = 1
+	side.pos = Vector2(state.pitch.length * 0.5 + 0.6, 4.0)
+	side.body_yaw = -PI * 0.5
+	state.players.append(side)
+	state.ball.pos = Vector3(-10.0, 0.11, 0.0)
+	Sim.seed_rng(state, 1)
+	for i in 180:
+		var cmds := []
+		for id in 2:
+			var cmd := PlayerCommand.new()
+			cmd.player_id = id
+			cmd.move = Vector2(0.0, 1.0)
+			cmds.append(cmd)
+		Sim.step(state, cmds, cfg)
+	var t: Dictionary = cfg["tuning"]
+	check(runner.pos.x <= state.pitch.length * 0.5 + 1e-3, "stopped at the goal line: %s" % runner.pos)
+	check(side.pos.y >= state.pitch.goal_width * 0.5 + t.player.radius - 1e-3, "stopped by the side net: %s" % side.pos)

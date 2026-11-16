@@ -50,7 +50,7 @@ static func update(state: WorldState, commands: Dictionary, dt: float, t: Dictio
 		if ball.owner_id != -1 and ball.owner_id != player.id:
 			continue
 		if _near(ball, player, c.radius, t.player.height):
-			_kick(state, player, commands[player.id], t.kick)
+			_kick(state, player, commands[player.id], t, rng)
 			return
 
 	if owner == null:
@@ -82,6 +82,57 @@ static func update_gaze_penalty(player: WorldState.PlayerState, ball: WorldState
 		player.control_penalty = minf(1.0, player.control_penalty + rate * dt)
 	else:
 		player.control_penalty = maxf(0.0, player.control_penalty - g.decay_rate * dt)
+
+
+static func aim_direction(player: WorldState.PlayerState, p: Dictionary, roll := 0.0) -> Vector2:
+	var off_body := minf(1.0, absf(player.head_yaw) / deg_to_rad(p.player.head_yaw_limit_deg))
+	return Vector2.from_angle(player.body_yaw + player.head_yaw + roll * off_body * deg_to_rad(p.pass.max_offbody_error_deg))
+
+
+static func intended_receiver(state: WorldState, passer_id: int, dir: Vector2, speed: float, p: Dictionary) -> int:
+	var passer := state.player_by_id(passer_id)
+	var best := -1
+	if dir == Vector2.ZERO or speed <= 0.0:
+		return best
+	var reach: float = speed * speed / (2.0 * p.ball.rolling_friction * p.sim.gravity)
+	var best_gap: float = p.pass.receiver_tolerance
+	for mate in state.players:
+		if mate.team != passer.team or mate.id == passer_id:
+			continue
+		var meet := mate.pos + mate.vel * clampf((mate.pos - passer.pos).dot(dir), 0.0, reach) / speed
+		var gap := meet.distance_to(passer.pos + dir * clampf((meet - passer.pos).dot(dir), 0.0, reach))
+		if gap <= best_gap:
+			best_gap = gap
+			best = mate.id
+	return best
+
+
+static func control_after(state: WorldState, controlled_id: int, follow_ball: bool, defend_switch := true, on_receive := true) -> int:
+	if not follow_ball:
+		return controlled_id
+	var team := state.player_by_id(controlled_id).team
+	for event in state.events:
+		if event.type == "pass" and event.player_id == controlled_id and event.target_id != -1:
+			return event.target_id
+		if event.type != "receive" or not on_receive:
+			continue
+		if state.player_by_id(event.player_id).team == team:
+			return event.player_id
+		if defend_switch:
+			return switch_target(state, controlled_id, true)
+	return controlled_id
+
+
+static func switch_target(state: WorldState, controlled_id: int, may_stay := false) -> int:
+	var team := state.player_by_id(controlled_id).team
+	var nearest := controlled_id
+	var nearest_dist := INF
+	for mate in state.players:
+		var dist := mate.pos.distance_to(_flat(state.ball.pos))
+		if mate.team == team and mate.role != "gk" and dist < nearest_dist and (may_stay or mate.id != controlled_id):
+			nearest_dist = dist
+			nearest = mate.id
+	return nearest
 
 
 static func first_touch_quality(ball_speed: float, pass_to_facing_angle: float, oriented: bool, t: Dictionary) -> float:
@@ -161,19 +212,25 @@ static func _take(state: WorldState, player: WorldState.PlayerState, tackle: boo
 	ball.pass_target_id = -1
 
 
-static func _kick(state: WorldState, player: WorldState.PlayerState, cmd: PlayerCommand, k: Dictionary) -> void:
+static func _kick(state: WorldState, player: WorldState.PlayerState, cmd: PlayerCommand, t: Dictionary, rng: RandomNumberGenerator) -> void:
 	var ball := state.ball
+	var k: Dictionary = t.kick
 	var passing := cmd.action == Action.PASS
 	var power := clampf(cmd.power, 0.0, 1.0)
 	var speed: float = lerpf(k.pass_speed_min, k.pass_speed_max, power) if passing else k.shot_speed * power
-	var yaw := player.body_yaw + player.head_yaw
+	var looked := passing and cmd.target_id == -1
+	var dir := aim_direction(player, t, rng.randf_range(-1.0, 1.0) if looked else 0.0)
 	var loft := deg_to_rad(k.loft_angle_deg) if cmd.lofted else 0.0
-	ball.vel = Vector3(cos(yaw) * cos(loft), sin(loft), sin(yaw) * cos(loft)) * speed
+	ball.vel = Vector3(dir.x * cos(loft), sin(loft), dir.y * cos(loft)) * speed
+	var target := cmd.target_id if passing else -1
+	if passing and target == -1:
+		target = intended_receiver(state, player.id, dir, speed, t)
+	ball.flight = 0.0
 	ball.owner_id = -1
 	ball.last_touch_id = player.id
 	ball.pass_from_id = player.id if passing else -1
-	ball.pass_target_id = cmd.target_id if passing else -1
-	_event(state, "pass" if passing else "shot", player.id, {"target_id": cmd.target_id, "power": power, "lofted": cmd.lofted})
+	ball.pass_target_id = target
+	_event(state, "pass" if passing else "shot", player.id, {"target_id": target, "power": power, "lofted": cmd.lofted})
 
 
 static func _home(player: WorldState.PlayerState, d: Dictionary) -> Vector2:

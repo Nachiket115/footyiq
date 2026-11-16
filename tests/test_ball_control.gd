@@ -146,7 +146,8 @@ func test_pass_goes_where_the_head_looks() -> void:
 	var state := _state([Vector2.ZERO])
 	state.players[0].head_yaw = 0.5
 	_update(state, [_cmd(0, PlayerCommand.Action.PASS, 0.5)])
-	check_near(_flat(state.ball.vel).angle(), 0.5, 1e-4, "direction")
+	var spread := deg_to_rad(t.pass.max_offbody_error_deg) * 0.5 / deg_to_rad(t.player.head_yaw_limit_deg)
+	check_near(_flat(state.ball.vel).angle(), 0.5, spread + 1e-4, "direction, within the off-body error")
 
 
 func test_lofted_pass_has_upward_velocity() -> void:
