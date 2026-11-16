@@ -69,7 +69,7 @@ func _decide() -> Intent:
 	if chasing:
 		return _collect()
 	if me.role == "gk":
-		var line := Roles.anchor(role, snap.ball_pos, snap.pitch, dir)
+		var line := Roles.anchor(role, snap, me.team)
 		var post: float = snap.pitch.goal_width * 0.5
 		return _go(Vector2(line.x, clampf(snap.ball_pos.y, -post, post)), sprint, Action.TRAP)
 	return _support() if holder.team == me.team else _defend()
@@ -259,7 +259,7 @@ func _defend() -> Intent:
 
 func _anchor() -> Vector2:
 	var half := Vector2(snap.pitch.length, snap.pitch.width) * 0.5
-	var shifted := Roles.anchor(role, snap.ball_pos, snap.pitch, dir) + Vector2(dir * objective.line_offset, 0.0)
+	var shifted := Roles.anchor(role, snap, me.team) + Vector2(dir * objective.line_offset, 0.0)
 	return shifted.clamp(-half, half)
 
 

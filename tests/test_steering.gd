@@ -49,13 +49,14 @@ func test_blend_caps_at_max_speed() -> void:
 	check_eq(slow, Vector2(1.0, 1.0), "weighted sum below the cap")
 
 
-func test_anchor_mirrors_and_follows_the_ball() -> void:
-	var role := {"home": [-0.25, 0.2], "shift": [0.5, 0.5]}
-	var pitch: Dictionary = drill.pitch
-	check_eq(Roles.anchor(role, Vector2.ZERO, pitch, 1), Vector2(-10.0, 5.0), "team attacking +x")
-	check_eq(Roles.anchor(role, Vector2.ZERO, pitch, -1), Vector2(10.0, 5.0), "team attacking -x")
-	check_eq(Roles.anchor(role, Vector2(4.0, -2.0), pitch, 1), Vector2(-8.0, 4.0), "shifts with the ball")
-	check_eq(Roles.anchor(role, Vector2(0.0, 99.0), pitch, 1).y, pitch.width * 0.5, "stays on the pitch")
+func test_anchor_is_the_tactic_zone_for_the_phase() -> void:
+	var snap := PitchSnapshot.new()
+	snap.pitch = drill.pitch
+	var role := {"shift": [0.5, 0.5], "zones": {"build_up": {"center": [-0.25, 0.2], "tolerance": 6.0}, "final_third": {"center": [0.0, 0.2], "tolerance": 6.0}}}
+	check_eq(Roles.anchor(role, snap, 0), Vector2(-10.0, 5.0), "team attacking +x")
+	check_eq(Roles.anchor(role, snap, 1), Vector2(10.0, 5.0), "team attacking -x")
+	snap.ball_pos = Vector2(10.0, 0.0)
+	check_eq(Roles.anchor(role, snap, 0), Vector2(5.0, 5.0), "final third zone, shifted with the ball")
 
 
 func test_spawn_builds_five_a_side() -> void:

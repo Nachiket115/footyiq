@@ -5,13 +5,14 @@ const Intent = preload("res://core/intent.gd")
 const PitchSnapshot = preload("res://core/pitch_snapshot.gd")
 const PlayerCommand = preload("res://core/player_command.gd")
 const Sim = preload("res://core/sim.gd")
+const Tactic = preload("res://core/tactic.gd")
 const Roles = preload("res://bots/roles.gd")
 const BotBrain = preload("res://bots/bot_brain.gd")
 const BotController = preload("res://sim/bot_controller.gd")
 
 
 func _init() -> void:
-	var args := {"matches": "1", "seed": "1", "home": "medium", "away": "medium", "exploit": ""}
+	var args := {"matches": "1", "seed": "1", "home": "medium", "away": "medium", "exploit": "", "baseline": ""}
 	var raw := OS.get_cmdline_user_args()
 	var problems: Array[String] = []
 	for i in range(0, raw.size(), 2):
@@ -27,6 +28,8 @@ func _init() -> void:
 			problems.append("unknown difficulty: %s" % args[side])
 	if args.exploit != "" and exploit_brain(args.exploit) == null:
 		problems.append("unknown exploit: %s" % args.exploit)
+	if args.baseline != "" and not cfg.get("drills", {}).get(cfg.get("tuning", {}).get("debug", {}).get("drill", ""), {}).get("roles", {}).has(args.baseline):
+		problems.append("unknown role: %s" % args.baseline)
 	if not (args.matches.is_valid_int() and args.seed.is_valid_int()):
 		problems.append("--matches and --seed take whole numbers")
 	if not problems.is_empty():
@@ -34,7 +37,10 @@ func _init() -> void:
 			printerr(problem)
 		quit(1)
 		return
-	print(JSON.stringify(series(cfg, int(args.matches), int(args.seed), args.home, args.away, args.exploit)))
+	if args.baseline != "":
+		print(JSON.stringify(baseline(cfg, int(args.seed), args.home, args.away, args.baseline)))
+	else:
+		print(JSON.stringify(series(cfg, int(args.matches), int(args.seed), args.home, args.away, args.exploit)))
 	quit(0)
 
 
@@ -61,7 +67,14 @@ static func series(cfg: Dictionary, matches: int, first_seed: int, home: String,
 	return result
 
 
-static func play(cfg: Dictionary, match_seed: int, home: String, away: String, exploit := "") -> Dictionary:
+static func baseline(cfg: Dictionary, match_seed: int, home: String, away: String, role: String) -> Dictionary:
+	var drill: Dictionary = cfg["drills"][cfg["tuning"].debug.drill]
+	var frames := []
+	play(cfg, match_seed, home, away, "", frames)
+	return Tactic.score_role(frames, drill.roles[role], {"player_id": drill.teams[0].find(role), "tuning": cfg["tuning"]})
+
+
+static func play(cfg: Dictionary, match_seed: int, home: String, away: String, exploit := "", frames: Variant = null) -> Dictionary:
 	var t: Dictionary = cfg["tuning"]
 	var drill: Dictionary = cfg["drills"][t.debug.drill]
 	var sides := [
@@ -80,6 +93,8 @@ static func play(cfg: Dictionary, match_seed: int, home: String, away: String, e
 	var samples := 0
 	for i in roundi(t.headless.match_s * rate):
 		Sim.step(state, bots.commands(state), cfg)
+		if frames != null and state.tick % int(t.headless.frame_ticks) == 0:
+			frames.append(PitchSnapshot.from_world(state, rate))
 		if state.ball.owner_id != -1:
 			owned[state.player_by_id(state.ball.owner_id).team] += 1
 		for event in state.events:

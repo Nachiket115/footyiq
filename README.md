@@ -28,8 +28,11 @@ godot --headless --path . -s tools/headless_match.gd -- --matches 20 --seed 1 --
 | `--seed S` | 1 | First seed |
 | `--home`, `--away` | `medium` | Difficulty from `config/difficulty.json`: `easy`, `medium`, `hard` |
 | `--exploit` | none | Replace the home team's carrier with a scripted trick: `always_back` (always pass to the deepest teammate) or `wing_dribble` (run down one wing and shoot) |
+| `--baseline ROLE` | none | Play one match with seed `S` and print the role execution score of the home team's bot in that role (`gk`, `cb`, `lm`, `rm`, `st`) instead of the match totals |
 
 It prints one JSON line with home wins, away wins, draws, goals, completed passes per team, the home team's share of possession, and the mean distance from each outfield player to the nearest outfield teammate. Match length is `headless.match_s` in `config/tuning.json`.
+
+With `--baseline`, the JSON line holds `structure`, `run` and `duty` scores from 0 to 1 for each phase of play, and `missed_triggers` with the match time of each one. Roles, zones and triggers come from the tactic file named by the drill, `config/tactics/5v5_1-2-1.json`.
 
 ## Configuration
 
@@ -38,4 +41,5 @@ Every tunable value is in `config/`:
 - `tuning.json`: physics, movement, ball control and bot behaviour
 - `difficulty.json`: bot reaction time, perception noise, speed, press radius and lane cover per difficulty
 - `objectives.json`: team objectives (`keep_possession`, `build_up`, `counter_attack`, `press_high`, `mid_block`, `low_block`), each a set of utility weight multipliers, a line-height offset and a press radius scale
-- `drills.json`: pitch size, teams and role positions
+- `drills.json`: pitch size, teams and the tactic file each drill uses
+- `tactics/5v5_1-2-1.json`: for each role, a zone per phase of play, spacing rules, run triggers and defensive duties; bots position from it and role execution is scored against it

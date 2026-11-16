@@ -95,7 +95,7 @@ func test_off_ball_moves_to_open_lane_point() -> void:
 		[0, "st", Vector2(4.0, 0.0)],
 		[1, "cb", Vector2(-2.0, 0.0)],
 	], Vector2(-9.4, 0.0), 0)
-	snap.players[1].pos = Roles.anchor(drill.roles["st"], snap.ball_pos, snap.pitch, 1)
+	snap.players[1].pos = Roles.anchor(drill.roles["st"], snap, 0)
 	var before := LaneMath.lane_openness(snap.players[0].pos, snap.players[1].pos, _opponents_of(snap, 0), t)
 	check_eq(before, 0.0, "lane to the anchor starts blocked")
 	check(_decide(snap, 1).desired_velocity.length() > 1.0, "moves off the blocked spot")

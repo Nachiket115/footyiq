@@ -312,7 +312,12 @@
 		],
 		"sun_color": "#fff4e0"
 	},
+	"tactic": {
+		"open_lane": 0.5,
+		"run_without_lane": 0.5
+	},
 	"headless": {
+		"frame_ticks": 6,
 		"match_s": 120.0,
 		"wing_depth": 4.0,
 		"wing_inset": 2.0
