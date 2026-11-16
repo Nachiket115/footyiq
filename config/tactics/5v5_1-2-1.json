@@ -53,7 +53,7 @@
 			"triggers": [
 				{"event": "mate_receives", "role": "cb", "response": "offer_lane", "window_s": 3.0},
 				{"event": "mate_receives", "role": "st", "response": "run_forward", "distance": 3.0, "window_s": 3.0},
-				{"event": "possession_won", "response": "run_forward", "distance": 3.0, "window_s": 4.0}
+				{"event": "possession_won", "response": "offer_lane", "window_s": 4.0}
 			],
 			"duties": [
 				{"event": "possession_lost", "response": "run_back", "distance": 3.0, "window_s": 4.0},
@@ -73,7 +73,7 @@
 			"triggers": [
 				{"event": "mate_receives", "role": "cb", "response": "offer_lane", "window_s": 3.0},
 				{"event": "mate_receives", "role": "st", "response": "run_forward", "distance": 3.0, "window_s": 3.0},
-				{"event": "possession_won", "response": "run_forward", "distance": 3.0, "window_s": 4.0}
+				{"event": "possession_won", "response": "offer_lane", "window_s": 4.0}
 			],
 			"duties": [
 				{"event": "possession_lost", "response": "run_back", "distance": 3.0, "window_s": 4.0},

@@ -93,7 +93,9 @@ static func score_role(frames: Array, role_data: Dictionary, p: Dictionary) -> D
 		for item: Dictionary in pending.duplicate():
 			var tr: Dictionary = item.tr
 			item.lane = item.lane or lane
-			if _response(tr, item, snap, me, dir, in_zone, lane):
+			if item.kind == "run" and possession(snap) == 1 - me.team:
+				pass
+			elif _response(tr, item, snap, me, dir, in_zone, lane):
 				_add(tally[item.kind], item.phase, 1.0 if item.kind == "duty" or item.lane else p.tuning.tactic.run_without_lane)
 			elif snap.time - item.t >= tr.window_s:
 				_add(tally[item.kind], item.phase, 0.0)

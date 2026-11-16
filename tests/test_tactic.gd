@@ -125,3 +125,12 @@ func test_bot_baseline_structure_above_0_6() -> void:
 		total += score.structure[phase]
 		check(score.structure[phase] > 0.3, "%s structure %.2f" % [phase, score.structure[phase]])
 	check(total / score.structure.size() > 0.6, "mean structure over phases %.2f" % (total / score.structure.size()))
+
+
+func test_run_is_void_when_the_ball_is_lost_inside_the_window() -> void:
+	var frames := _run_frames(0.0)
+	for snap: PitchSnapshot in frames.slice(3):
+		snap.owner_id = 3
+		snap.last_touch_id = 3
+	var score := Tactic.score_role(frames, _one_run(), params)
+	check_eq([score.run, score.missed_triggers], [{}, []], "neither scored nor missed")
