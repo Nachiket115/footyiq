@@ -52,7 +52,10 @@ func _ready() -> void:
 	for p in state.players:
 		if p.team == 0 and p.role == drill.human_default_role:
 			controlled_id = p.id
-	_bots = BotController.new(cfg, [drill, drill])
+	var sides := []
+	for side: Dictionary in t.debug.teams:
+		sides.append(BotController.team(cfg, drill, side.difficulty, side.attack, side.defend))
+	_bots = BotController.new(cfg, sides)
 	_bots.human_id = controlled_id
 
 	add_child(PitchView.new(state.pitch, t))

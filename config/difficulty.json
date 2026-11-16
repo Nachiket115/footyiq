@@ -1,0 +1,23 @@
+{
+	"easy": {
+		"reaction_time": 0.45,
+		"perception_noise": 1.5,
+		"speed_factor": 0.85,
+		"press_radius": 3.0,
+		"lane_cover": 0.3
+	},
+	"medium": {
+		"reaction_time": 0.25,
+		"perception_noise": 0.8,
+		"speed_factor": 0.95,
+		"press_radius": 5.0,
+		"lane_cover": 0.6
+	},
+	"hard": {
+		"reaction_time": 0.12,
+		"perception_noise": 0.3,
+		"speed_factor": 1.0,
+		"press_radius": 7.0,
+		"lane_cover": 0.9
+	}
+}

@@ -15,6 +15,7 @@ var t: Dictionary
 var b: Dictionary
 var w: Dictionary
 var diff: Dictionary
+var objective: Dictionary
 var rng: RandomNumberGenerator
 var me: Dictionary
 var mates: Array[Dictionary] = []
@@ -39,7 +40,6 @@ func _init(snapshot: PitchSnapshot, role_data: Dictionary, params: Dictionary) -
 	role = role_data
 	t = params.tuning
 	b = t.bot
-	w = b.weights
 	diff = params.difficulty
 	rng = params.rng
 	me = _player(params.self_id)
@@ -57,6 +57,10 @@ func _init(snapshot: PitchSnapshot, role_data: Dictionary, params: Dictionary) -
 	jog = t.player.jog_speed * diff.speed_factor
 	sprint = t.player.sprint_speed * diff.speed_factor
 	_find_holder()
+	objective = params.objectives["attack" if holder.team == me.team else "defend"]
+	w = b.weights.duplicate()
+	for key: String in objective.weights:
+		w[key] *= objective.weights[key]
 
 
 func _decide() -> Intent:
@@ -199,7 +203,7 @@ func _shot_aim() -> Vector2:
 
 
 func _support() -> Intent:
-	var anchor := Roles.anchor(role, snap.ball_pos, snap.pitch, dir)
+	var anchor := _anchor()
 	var half := Vector2(snap.pitch.length, snap.pitch.width) * 0.5 - Vector2.ONE
 	var points := [anchor]
 	var count := int(b.support_points)
@@ -228,7 +232,7 @@ func _defend() -> Intent:
 	var pressing := false
 	var free: Array[Dictionary] = []
 	for defender in _outfield(mates + [me]):
-		if defender.pos.distance_to(ball_at) < diff.press_radius:
+		if defender.pos.distance_to(ball_at) < diff.press_radius * objective.press_scale:
 			pressing = true
 			if defender.id == me.id:
 				return _press()
@@ -250,7 +254,13 @@ func _defend() -> Intent:
 		free.erase(marker)
 		if marker.id == me.id:
 			return _mark(threat)
-	return _hurry(Roles.anchor(role, snap.ball_pos, snap.pitch, dir))
+	return _hurry(_anchor())
+
+
+func _anchor() -> Vector2:
+	var half := Vector2(snap.pitch.length, snap.pitch.width) * 0.5
+	var shifted := Roles.anchor(role, snap.ball_pos, snap.pitch, dir) + Vector2(dir * objective.line_offset, 0.0)
+	return shifted.clamp(-half, half)
 
 
 func _press() -> Intent:

@@ -15,6 +15,7 @@ var _t: Dictionary
 var _b: Dictionary
 var _teams: Array
 var _rng: RandomNumberGenerator
+var _max_delay := 0
 var _history: Array[PitchSnapshot] = []
 var _intents := {}
 var _drift := {}
@@ -26,6 +27,17 @@ func _init(cfg: Dictionary, team_params: Array) -> void:
 	_t = cfg["tuning"]
 	_b = _t.bot
 	_teams = team_params
+	for team: Dictionary in _teams:
+		_max_delay = maxi(_max_delay, roundi(team.difficulty.reaction_time * _t.sim.tick_rate))
+
+
+static func team(cfg: Dictionary, drill: Dictionary, difficulty: String, attack: String, defend: String) -> Dictionary:
+	return {
+		"roles": drill.roles,
+		"difficulty": cfg["difficulty"][difficulty],
+		"objectives": {"attack": cfg["objectives"][attack], "defend": cfg["objectives"][defend]},
+		"brain": BotBrain,
+	}
 
 
 func commands(state: WorldState) -> Array:
@@ -33,7 +45,7 @@ func commands(state: WorldState) -> Array:
 		_rng = RandomNumberGenerator.new()
 		_rng.seed = hash(state.rng_state)
 	_history.append(PitchSnapshot.from_world(state, _t.sim.tick_rate))
-	if _history.size() > _delay_ticks() + 1:
+	if _history.size() > _max_delay + 1:
 		_history.pop_front()
 	var every := roundi(_b.decide_interval * _t.sim.tick_rate)
 	var result := []
@@ -41,19 +53,21 @@ func commands(state: WorldState) -> Array:
 		if player.id == human_id:
 			continue
 		if not _intents.has(player.id) or (state.tick + player.id % int(_b.stagger_ticks)) % every == 0:
-			var params := {"self_id": player.id, "tuning": _t, "difficulty": _b.difficulty, "rng": _rng}
-			_intents[player.id] = BotBrain.decide(perceive(player.id), _teams[player.team].roles[player.role], params)
+			var side: Dictionary = _teams[player.team]
+			var params := {"self_id": player.id, "tuning": _t, "difficulty": side.difficulty, "objectives": side.objectives, "rng": _rng}
+			_intents[player.id] = side.brain.decide(perceive(player.id), side.roles[player.role], params)
 		result.append(_command(state, player, _intents[player.id]))
 	return result
 
 
 func perceive(id: int) -> PitchSnapshot:
 	var now: PitchSnapshot = _history[-1]
-	var old: PitchSnapshot = _history[maxi(0, _history.size() - 1 - _delay_ticks())]
 	var me: Dictionary
 	for player in now.players:
 		if player.id == id:
 			me = player
+	var diff: Dictionary = _teams[me.team].difficulty
+	var old: PitchSnapshot = _history[maxi(0, _history.size() - 1 - roundi(diff.reaction_time * _t.sim.tick_rate))]
 
 	var drift: Array = _drift.get_or_add(id, [])
 	var keep: float = _b.noise_keep
@@ -72,10 +86,10 @@ func perceive(id: int) -> PitchSnapshot:
 			seen.players.append(me)
 			continue
 		other = other.duplicate()
-		other.pos = _blur(other.pos + other.vel * lag, me.pos, drift[i])
+		other.pos = _blur(other.pos + other.vel * lag, me.pos, drift[i], diff.perception_noise)
 		seen.players.append(other)
 	var ball := now if id in [old.owner_id, now.owner_id] else old
-	seen.ball_pos = _blur(ball.ball_pos + ball.ball_vel * (now.time - ball.time), me.pos, drift[-1])
+	seen.ball_pos = _blur(ball.ball_pos + ball.ball_vel * (now.time - ball.time), me.pos, drift[-1], diff.perception_noise)
 	seen.ball_vel = ball.ball_vel
 	seen.ball_height = ball.ball_height
 	seen.owner_id = ball.owner_id
@@ -83,12 +97,8 @@ func perceive(id: int) -> PitchSnapshot:
 	return seen
 
 
-func _delay_ticks() -> int:
-	return roundi(_b.difficulty.reaction_time * _t.sim.tick_rate)
-
-
-func _blur(pos: Vector2, from: Vector2, drift: Vector2) -> Vector2:
-	return pos + drift * _b.difficulty.perception_noise * minf(1.0, from.distance_to(pos) / _b.noise_range)
+func _blur(pos: Vector2, from: Vector2, drift: Vector2, noise: float) -> Vector2:
+	return pos + drift * noise * minf(1.0, from.distance_to(pos) / _b.noise_range)
 
 
 func _command(state: WorldState, player: WorldState.PlayerState, intent: Intent) -> PlayerCommand:

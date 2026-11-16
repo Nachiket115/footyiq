@@ -104,7 +104,7 @@ func test_intent_becomes_a_command_that_turns_then_runs() -> void:
 func _run_bots(ticks: int) -> Dictionary:
 	var state: WorldState = Roles.spawn(drill, t)
 	Sim.seed_rng(state, 3)
-	var controller := BotController.new(cfg, [drill, drill])
+	var controller := BotController.new(cfg, _sides())
 	var min_dist := INF
 	var flips := {}
 	var last_turn := {}
@@ -144,7 +144,7 @@ func test_no_jitter() -> void:
 
 func test_bot_carrier_keeps_its_eyes_on_the_ball() -> void:
 	var state: WorldState = Roles.spawn(drill, t)
-	var controller := BotController.new(cfg, [drill, drill])
+	var controller := BotController.new(cfg, _sides())
 	var striker := state.players[4]
 	state.ball.pos = Vector3(striker.pos.x + 0.6, t.ball.radius, striker.pos.y)
 	for i in 300:
@@ -156,8 +156,13 @@ func test_bot_carrier_keeps_its_eyes_on_the_ball() -> void:
 
 func test_human_player_gets_no_bot_command() -> void:
 	var state: WorldState = Roles.spawn(drill, t)
-	var controller := BotController.new(cfg, [drill, drill])
+	var controller := BotController.new(cfg, _sides())
 	controller.human_id = 3
 	var ids := controller.commands(state).map(func(c: PlayerCommand) -> int: return c.player_id)
 	check_eq(ids.size(), 9, "nine commands")
 	check(not ids.has(3), "none for the human")
+
+
+func _sides() -> Array:
+	var side := BotController.team(cfg, drill, "medium", "build_up", "mid_block")
+	return [side, side]

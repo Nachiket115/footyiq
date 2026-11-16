@@ -10,6 +10,7 @@ const LaneMath = preload("res://core/lane_math.gd")
 const Roles = preload("res://bots/roles.gd")
 const BotBrain = preload("res://bots/bot_brain.gd")
 const BotController = preload("res://sim/bot_controller.gd")
+const HeadlessMatch = preload("res://tools/headless_match.gd")
 
 const Action = PlayerCommand.Action
 
@@ -29,10 +30,15 @@ func _snap(players: Array, ball: Vector2, owner_id: int) -> PitchSnapshot:
 	return snap
 
 
+func _sides(config: Dictionary) -> Array:
+	var side := BotController.team(config, drill, "medium", "build_up", "mid_block")
+	return [side, side]
+
+
 func _decide(snap: PitchSnapshot, id: int, rng_seed := 1) -> Intent:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = rng_seed
-	var params := {"self_id": id, "tuning": t, "difficulty": t.bot.difficulty, "rng": rng}
+	var params := {"self_id": id, "tuning": t, "difficulty": cfg["difficulty"].medium, "objectives": {"attack": cfg["objectives"].build_up, "defend": cfg["objectives"].mid_block}, "rng": rng}
 	return BotBrain.decide(snap, drill.roles[snap.players[id].role], params)
 
 
@@ -101,7 +107,7 @@ func test_defender_presses_inside_trigger_radius() -> void:
 	var snap := _snap([
 		[0, "cb", Vector2(0.0, 0.0)],
 		[0, "st", Vector2(10.0, 4.0)],
-		[1, "st", Vector2(t.bot.difficulty.press_radius - 1.0, 1.0)],
+		[1, "st", Vector2(cfg["difficulty"].medium.press_radius - 1.0, 1.0)],
 	], Vector2(0.6, 0.0), 0)
 	var intent := _decide(snap, 2)
 	var to_ball: Vector2 = snap.ball_pos - snap.players[2].pos
@@ -129,17 +135,17 @@ func test_defender_marks_outside_trigger_radius() -> void:
 
 func test_delayed_snapshot_is_reaction_time_old() -> void:
 	var quiet: Dictionary = cfg.duplicate(true)
-	quiet.tuning.bot.difficulty.perception_noise = 0.0
+	quiet.difficulty.medium.perception_noise = 0.0
 	var state: WorldState = Roles.spawn(drill, t)
 	Sim.seed_rng(state, 5)
-	var controller := BotController.new(quiet, [drill, drill])
+	var controller := BotController.new(quiet, _sides(quiet))
 	var seen_at := {}
 	for i in 90:
-		seen_at[state.tick] = state.players[9].pos + state.players[9].vel * t.bot.difficulty.reaction_time
+		seen_at[state.tick] = state.players[9].pos + state.players[9].vel * cfg["difficulty"].medium.reaction_time
 		Sim.step(state, controller.commands(state), quiet)
 	seen_at[state.tick] = state.players[9].pos
 	controller.commands(state)
-	var delay: float = t.bot.difficulty.reaction_time
+	var delay: float = cfg["difficulty"].medium.reaction_time
 	var old_tick := state.tick - roundi(delay * t.sim.tick_rate)
 	var seen: PitchSnapshot = controller.perceive(1)
 	check_near(seen.time, state.tick / t.sim.tick_rate - delay, 1e-6, "snapshot time")
@@ -151,7 +157,7 @@ func test_delayed_snapshot_is_reaction_time_old() -> void:
 func test_perception_noise_grows_with_distance() -> void:
 	var state: WorldState = Roles.spawn(drill, t)
 	Sim.seed_rng(state, 5)
-	var controller := BotController.new(cfg, [drill, drill])
+	var controller := BotController.new(cfg, _sides(cfg))
 	var near_error := 0.0
 	var far_error := 0.0
 	for i in 200:
@@ -179,7 +185,7 @@ func test_gk_tracks_ball_along_goal_line() -> void:
 func test_bots_play_a_passing_game() -> void:
 	var state: WorldState = Roles.spawn(drill, t)
 	Sim.seed_rng(state, 11)
-	var controller := BotController.new(cfg, [drill, drill])
+	var controller := BotController.new(cfg, _sides(cfg))
 	var passes := 0
 	var completed := 0
 	for i in 3600:
@@ -193,3 +199,36 @@ func test_bots_play_a_passing_game() -> void:
 	check(completed * 2 >= passes, "at least half arrive: %d of %d" % [completed, passes])
 	for player in state.players:
 		check(player.pos.is_finite(), "player %d position is finite" % player.id)
+
+
+func test_hard_beats_easy_over_20_matches() -> void:
+	var result := HeadlessMatch.series(cfg, 20, 1, "hard", "easy")
+	check(result.home_wins > result.away_wins, "hard %d, easy %d, draws %d" % [result.home_wins, result.away_wins, result.draws])
+	check(result.goals[0] > result.goals[1], "goals %s" % [result.goals])
+
+
+func test_exploit_always_back_does_not_beat_medium() -> void:
+	var result := HeadlessMatch.series(cfg, 20, 1, "medium", "medium", "always_back")
+	check(result.home_wins * 2 < result.matches, "exploit won %d of %d" % [result.home_wins, result.matches])
+
+
+func test_exploit_wing_dribble_does_not_beat_medium() -> void:
+	var result := HeadlessMatch.series(cfg, 20, 1, "medium", "medium", "wing_dribble")
+	check(result.home_wins * 2 < result.matches, "exploit won %d of %d" % [result.home_wins, result.matches])
+
+
+func test_objective_shifts_the_line() -> void:
+	var snap := _snap([
+		[0, "cb", Vector2(-12.0, 0.0)],
+		[1, "st", Vector2(-9.0, 0.0)],
+		[1, "cb", Vector2(10.0, 0.0)],
+	], Vector2(-11.4, 0.0), 0)
+	var lines := {}
+	for name: String in ["low_block", "mid_block", "press_high"]:
+		var rng := RandomNumberGenerator.new()
+		var params := {"self_id": 2, "tuning": t, "difficulty": cfg["difficulty"].medium, "objectives": {"attack": cfg["objectives"].build_up, "defend": cfg["objectives"][name]}, "rng": rng}
+		snap.players[2].pos = Vector2(10.0, 0.0)
+		for i in 50:
+			snap.players[2].pos += BotBrain.decide(snap, drill.roles["cb"], params).desired_velocity * t.bot.decide_interval
+		lines[name] = snap.players[2].pos.x
+	check(lines.press_high < lines.mid_block and lines.mid_block < lines.low_block, "team 1 lines by objective: %s" % lines)

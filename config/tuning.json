@@ -104,13 +104,6 @@
 		"stagger_ticks": 6,
 		"noise_keep": 0.9,
 		"noise_range": 15.0,
-		"difficulty": {
-			"reaction_time": 0.25,
-			"perception_noise": 0.8,
-			"speed_factor": 0.95,
-			"press_radius": 5.0,
-			"lane_cover": 0.6
-		},
 		"choice_noise": 0.05,
 		"min_pass_distance": 4.0,
 		"pass_speed_base": 7.0,
@@ -319,8 +312,17 @@
 		],
 		"sun_color": "#fff4e0"
 	},
+	"headless": {
+		"match_s": 120.0,
+		"wing_depth": 4.0,
+		"wing_inset": 2.0
+	},
 	"debug": {
 		"drill": "5v5",
+		"teams": [
+			{"difficulty": "medium", "attack": "build_up", "defend": "mid_block"},
+			{"difficulty": "medium", "attack": "build_up", "defend": "mid_block"}
+		],
 		"spectator_pos": [
 			-9.0,
 			5.0,
