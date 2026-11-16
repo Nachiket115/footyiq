@@ -1,0 +1,23 @@
+{
+	"scene": "res://assets/characters/quaternius/Superhero_Male_FullBody.gltf",
+	"animations": "res://assets/characters/quaternius/UAL1_Standard.glb",
+	"model_height": 1.82,
+	"blend_s": 0.2,
+	"clips": [
+		{"name": "Idle", "max_speed": 0.3, "stride_speed": 0.0},
+		{"name": "Walk", "max_speed": 2.6, "stride_speed": 1.6},
+		{"name": "Jog_Fwd", "max_speed": 5.5, "stride_speed": 3.6},
+		{"name": "Sprint", "max_speed": 99.0, "stride_speed": 6.5}
+	],
+	"look_bones": ["spine_03", "neck_01", "Head"],
+	"kit": {
+		"mesh": "SuperHero_Male",
+		"regions": [
+			["spine_01", "spine_02", "spine_03", "clavicle_l", "clavicle_r", "upperarm_l", "upperarm_r"],
+			["pelvis", "thigh_l", "thigh_r"],
+			["calf_l", "calf_r"],
+			["foot_l", "foot_r", "ball_l", "ball_r", "ball_leaf_l", "ball_leaf_r"]
+		],
+		"boot_color": "#151515"
+	}
+}
