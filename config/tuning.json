@@ -97,6 +97,20 @@
 		"radius": 0.9,
 		"chance_per_s": 2.0
 	},
+	"lane": {
+		"pass_speed": 15.0,
+		"reach_radius": 1.0,
+		"opp_speed": 4.0,
+		"margin": 2.0,
+		"space_radius": 6.0,
+		"max_pass_distance": 30.0,
+		"weights": {
+			"openness": 1.0,
+			"progression": 0.6,
+			"space": 0.4,
+			"risk": 0.3
+		}
+	},
 	"visual": {
 		"mow_stripe_width": 2.5,
 		"pitch_margin": 30.0,
