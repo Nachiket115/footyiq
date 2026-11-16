@@ -43,7 +43,9 @@ static func step(state: WorldState, commands: Array, cfg: Dictionary) -> WorldSt
 			state.score[event.team] += 1
 			_place_ball(state.ball, Vector3(0.0, t.ball.radius, 0.0))
 		else:
-			_place_ball(state.ball, event.pos)
+			var reach_x: float = state.pitch.length * 0.5 - t.sim.restart_inset
+			var reach_z: float = state.pitch.width * 0.5 - t.sim.restart_inset
+			_place_ball(state.ball, Vector3(clampf(event.pos.x, -reach_x, reach_x), event.pos.y, clampf(event.pos.z, -reach_z, reach_z)))
 	return state
 
 

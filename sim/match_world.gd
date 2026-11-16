@@ -3,6 +3,8 @@ extends Node3D
 const Config = preload("res://core/config.gd")
 const WorldState = preload("res://core/world_state.gd")
 const Sim = preload("res://core/sim.gd")
+const Roles = preload("res://bots/roles.gd")
+const BotController = preload("res://sim/bot_controller.gd")
 const InputMapper = preload("res://sim/input_mapper.gd")
 const HumanController = preload("res://sim/human_controller.gd")
 const CameraRig = preload("res://sim/camera_rig.gd")
@@ -14,14 +16,13 @@ const PlayerBody = preload("res://sim/player_body.gd")
 const Meshes = preload("res://sim/meshes.gd")
 const BodyIndicator = preload("res://ui/body_indicator.gd")
 
-const TEMP_PLAYER_START := Vector2(-0.6, 0.0)
-
 var cfg: Dictionary
 var state: WorldState
 var controlled_id := 0
 
 var _mapper: InputMapper
 var _controller: HumanController
+var _bots: BotController
 var _rig: CameraRig
 var _spectator := Camera3D.new()
 var _body_indicator: BodyIndicator
@@ -45,13 +46,14 @@ func _ready() -> void:
 	Engine.physics_ticks_per_second = int(t.sim.tick_rate)
 	_eye_height = t.player.eye_height
 
-	state = WorldState.new()
-	state.pitch = t.pitch.duplicate(true)
-	state.ball.pos = Vector3(0.0, t.ball.radius, 0.0)
-	var player := WorldState.PlayerState.new()
-	player.pos = TEMP_PLAYER_START
-	state.players.append(player)
-	controlled_id = player.id
+	var drill: Dictionary = cfg["drills"][t.debug.drill]
+	state = Roles.spawn(drill, t)
+	Sim.seed_rng(state, Time.get_ticks_usec())
+	for p in state.players:
+		if p.team == 0 and p.role == drill.human_default_role:
+			controlled_id = p.id
+	_bots = BotController.new(cfg, [drill, drill])
+	_bots.human_id = controlled_id
 
 	add_child(PitchView.new(state.pitch, t))
 	add_child(StadiumView.new(state.pitch, t))
@@ -79,7 +81,7 @@ func _ready() -> void:
 func _physics_process(_delta: float) -> void:
 	_remember()
 	var command := _controller.build_command(state.tick + 1, controlled_id, _mapper.poll())
-	Sim.step(state, [command], cfg)
+	Sim.step(state, [command] + _bots.commands(state), cfg)
 	_controller.sync(state.player_by_id(controlled_id).head_yaw)
 	if not state.events.is_empty():
 		_prev_ball = state.ball.pos

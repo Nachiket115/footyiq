@@ -1,0 +1,22 @@
+{
+	"5v5": {
+		"pitch": {
+			"length": 40.0,
+			"width": 25.0,
+			"goal_width": 3.0,
+			"boards": false
+		},
+		"human_default_role": "rm",
+		"teams": [
+			["gk", "cb", "lm", "rm", "st"],
+			["gk", "cb", "lm", "rm", "st"]
+		],
+		"roles": {
+			"gk": {"home": [-0.47, 0.0], "shift": [0.02, 0.1]},
+			"cb": {"home": [-0.3, 0.0], "shift": [0.35, 0.4]},
+			"lm": {"home": [-0.08, -0.28], "shift": [0.5, 0.3]},
+			"rm": {"home": [-0.08, 0.28], "shift": [0.5, 0.3]},
+			"st": {"home": [0.18, 0.0], "shift": [0.5, 0.45]}
+		}
+	}
+}
